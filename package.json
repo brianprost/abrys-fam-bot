@@ -2,7 +2,14 @@
   "name": "promote-it-on-abrys",
   "module": "index.ts",
   "type": "module",
+  "scripts": {
+    "bot": "bun run index.ts"
+  },
   "devDependencies": {
     "bun-types": "^0.5.0"
+  },
+  "dependencies": {
+    "@discordjs/core": "^0.5.2",
+    "instagram-private-api": "^1.45.3"
   }
 }
