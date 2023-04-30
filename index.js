@@ -1,10 +1,27 @@
 import { Client, GatewayIntentBits } from "discord.js";
 // import { IgApiClient } from "instagram-private-api";
+// fs
+import fs from "fs";
 import * as dotenv from "dotenv";
 dotenv.config();
 
 function prettyLog(message) {
   console.log(`🤖 new message: ${message}`);
+}
+
+async function promoteItOnAbrys(url) {
+  prettyLog(`image url: ${url}`)
+  try {
+    const writeStream = fs.createWriteStream("image.png");
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const arrayBuffer = await blob.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    await writeStream.write(buffer);
+  } catch (error) {
+    return `error promoting to abrys: ${error}`
+  }
+  return "promoted to abrys"
 }
 
 const token = process.env.DISCORD_TOKEN;
@@ -19,8 +36,7 @@ const discordClient = new Client({
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildMessageReactions,
-    // GatewayIntentBits.GuildMembers
-  ]
+  ],
 });
 
 // const ig = new IgApiClient();
@@ -38,17 +54,14 @@ discordClient.once("ready", async () => {
 });
 
 discordClient.on("messageCreate", async (message) => {
-  // echo any message sent in the "promote-it-on-abrys" channel. for some reason, `name` is not working
-  prettyLog(message.content);
-  // if there's an image attached, reply "nice pic, yo"
+  prettyLog(`${message.author.username} says: ${message.content}`);
   if (message.attachments.size > 0) {
-    message.reply("nice pic, yo");
-    if (message.attachments.first().url) {
-      const response = await fetch(message.attachments.first().url);
-      const buffer = await response.buffer();
-      await postInstagram(buffer);
+    message.reply("Beep boop, promoting image on abrys!");
+    const attachment = message.attachments.first();
+    if (attachment.contentType.startsWith("image/")) {
+      const didPromotToAbrys = await promoteItOnAbrys(attachment.url);
+      message.reply(didPromotToAbrys);
     }
-
   }
 });
 
@@ -89,8 +102,7 @@ async function postInstagram(imageBuffer) {
   fs.writeFile("test.jpg", imageBuffer, function (err) {
     if (err) return console.log(err);
     prettyLog("Image saved to disk");
-  }
-  );
+  });
 }
 
 discordClient.login(token);
