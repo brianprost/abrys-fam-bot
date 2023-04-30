@@ -1,15 +1,15 @@
-import { Client, GatewayIntentBits } from "discord.js";
+import { Attachment, Client, GatewayIntentBits } from "discord.js";
 // import { IgApiClient } from "instagram-private-api";
 // fs
 import fs from "fs";
 import * as dotenv from "dotenv";
 dotenv.config();
 
-function prettyLog(message) {
+function prettyLog(message: string) {
   console.log(`🤖 new message: ${message}`);
 }
 
-async function promoteItOnAbrys(url) {
+async function promoteItOnAbrys(url: string) {
   prettyLog(`image url: ${url}`);
   try {
     const writeStream = fs.createWriteStream("image.png");
@@ -61,8 +61,8 @@ discordClient.on("messageCreate", async (message) => {
     prettyLog(`${message.author.username} says: ${message.content}`);
     if (message.attachments.size > 0) {
       message.reply("Beep boop, promoting image on abrys!");
-      const attachment = message.attachments.first();
-      if (attachment.contentType.startsWith("image/")) {
+      const attachment: Attachment = message.attachments.first() as Attachment;
+      if (attachment.contentType?.startsWith("image/")) {
         const didPromotToAbrys = await promoteItOnAbrys(attachment.url);
         message.reply(didPromotToAbrys);
       }
