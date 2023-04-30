@@ -1,9 +1,13 @@
-# from node 18.x
-FROM node:18
+FROM node:18-alpine
 
-COPY package.json ./
-RUN npm install
+RUN npm install -g pnpm
+
+WORKDIR /app
+
+COPY package.json .
+COPY pnpm-lock.yaml .
+RUN pnpm install
 
 COPY index.ts tsconfig.json ./
 
-CMD [ "npm", "start" ]
+CMD [ "pnpm", "start" ]

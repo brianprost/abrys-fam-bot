@@ -13,6 +13,7 @@
   "dependencies": {
     "discord.js": "^14.9.0",
     "dotenv": "^16.0.3",
+    "firebase": "^9.21.0",
     "instagram-private-api": "^1.45.3"
   },
   "devDependencies": {
