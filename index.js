@@ -10,7 +10,7 @@ function prettyLog(message) {
 }
 
 async function promoteItOnAbrys(url) {
-  prettyLog(`image url: ${url}`)
+  prettyLog(`image url: ${url}`);
   try {
     const writeStream = fs.createWriteStream("image.png");
     const response = await fetch(url);
@@ -19,9 +19,9 @@ async function promoteItOnAbrys(url) {
     const buffer = Buffer.from(arrayBuffer);
     await writeStream.write(buffer);
   } catch (error) {
-    return `error promoting to abrys: ${error}`
+    return `error promoting to abrys: ${error}`;
   }
-  return "promoted to abrys"
+  return "promoted to abrys";
 }
 
 const token = process.env.DISCORD_TOKEN;
@@ -54,13 +54,18 @@ discordClient.once("ready", async () => {
 });
 
 discordClient.on("messageCreate", async (message) => {
-  prettyLog(`${message.author.username} says: ${message.content}`);
-  if (message.attachments.size > 0) {
-    message.reply("Beep boop, promoting image on abrys!");
-    const attachment = message.attachments.first();
-    if (attachment.contentType.startsWith("image/")) {
-      const didPromotToAbrys = await promoteItOnAbrys(attachment.url);
-      message.reply(didPromotToAbrys);
+  const canDoSomething =
+    message.channel.name === "promote-it-on-abrys" &&
+    message.author.username != "promote-it-on-abrys";
+  if (canDoSomething) {
+    prettyLog(`${message.author.username} says: ${message.content}`);
+    if (message.attachments.size > 0) {
+      message.reply("Beep boop, promoting image on abrys!");
+      const attachment = message.attachments.first();
+      if (attachment.contentType.startsWith("image/")) {
+        const didPromotToAbrys = await promoteItOnAbrys(attachment.url);
+        message.reply(didPromotToAbrys);
+      }
     }
   }
 });
@@ -88,21 +93,12 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
   // }
 });
 
-// async function postInstagram(imageBuffer) {
-//   const publishResult = await ig.publish.photo({
-//     file: imageBuffer,
-//     caption: "Posted by Discord bot",
-//   });
-//   prettyLog("Image posted to Instagram:", publishResult.media.code);
-// }
-
 async function postInstagram(imageBuffer) {
-  // for testing purposes for now, just save the image to the local disk
-  const fs = require("fs");
-  fs.writeFile("test.jpg", imageBuffer, function (err) {
-    if (err) return console.log(err);
-    prettyLog("Image saved to disk");
+  const publishResult = await ig.publish.photo({
+    file: imageBuffer,
+    caption: "Posted by Discord bot",
   });
+  prettyLog("Image posted to Instagram:", publishResult.media.code);
 }
 
 discordClient.login(token);
