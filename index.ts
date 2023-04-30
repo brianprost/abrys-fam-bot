@@ -23,7 +23,6 @@ async function promoteItOnAbrys(url: string, discordUser: string): Promise<strin
   } catch (error) {
     return `error promoting to abrys: ${error}`;
   }
-  return "promoted to abrys";
 }
 
 const token = process.env.DISCORD_TOKEN;
@@ -48,8 +47,8 @@ discordClient.on("messageCreate", async (message) => {
     channelName.name === "abrys-fam" &&
     messageAuthor != "promote-it-on-abrys";
   if (canDoSomething) {
-    prettyLog(`${messageAuthor} says: ${message.content}`);
     if (message.attachments.size > 0) {
+      prettyLog(`${messageAuthor} says: ${message.content}`);
       message.reply("Beep boop, summoning an abrys to post this on @abrys_fam...");
       const attachment = message.attachments.first() as Attachment;
       if (attachment.contentType?.startsWith("image/")) {
