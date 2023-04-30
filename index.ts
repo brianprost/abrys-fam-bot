@@ -1,23 +1,39 @@
-import { Client, GatewayIntentBits } from "@discordjs/core";
-import { REST } from "@discordjs/rest";
-import { WebSocketManager } from "@discordjs/ws";
+import { Attachment, Client, GatewayIntentBits, TextChannel } from "discord.js";
 import { IgApiClient } from "instagram-private-api";
 
-const token = process.env.DISCORD_TOKEN!;
-const [igUsername, igPassword] = [
+function prettyLog(message: string) {
+  console.log(`🤖 new message: ${message}`);
+}
+
+async function promoteItOnAbrys(url: string) {
+  prettyLog(`image url: ${url}`);
+  try {
+    // const response = await fetch(url);
+    // const blob = await response.blob();
+    // const arrayBuffer = await blob.arrayBuffer();
+    // const buffer = Buffer.from(arrayBuffer);
+    // // we're using bun.sh
+    // await Bun.write("abrys", buffer);
+  } catch (error) {
+    return `error promoting to abrys: ${error}`;
+  }
+  return "promoted to abrys";
+}
+
+const token = process.env.DISCORD_TOKEN;
+const [igUsername, igPassword]: [string, string] = [
   process.env.igUsername!,
   process.env.igPassword!,
 ];
 
-const rest = new REST({ version: "10" }).setToken(token);
-
-const gateway = new WebSocketManager({
-  token,
-  intents: GatewayIntentBits.GuildMessages | GatewayIntentBits.MessageContent,
-  rest,
+const discordClient = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMessageReactions,
+  ],
 });
-
-const discordClient = new Client({ rest, gateway });
 
 const ig = new IgApiClient();
 
@@ -29,45 +45,58 @@ async function loginInstagram() {
 }
 
 discordClient.once("ready", async () => {
-  console.log("Bot is ready!");
-  await loginInstagram();
+  prettyLog("Bot is ready!");
+  // await loginInstagram();
 });
 
 discordClient.on("messageCreate", async (message) => {
-  if (message.channel.name === "abrys" && message.attachments.size > 0) {
-    await message.react("👍");
-  }
-});
-
-discordClient.on("messageReactionAdd", async (reaction, user) => {
-  if (
-    reaction.message.channel.name === "abrys" &&
-    reaction.emoji.name === "👍" &&
-    reaction.count >= 2
-  ) {
-    const approvedUsers = ["angular emoji", "lulu.wav"];
-    const reactors = await reaction.users.fetch();
-    if (
-      approvedUsers.every((username) =>
-        reactors.some((u) => u.username === username)
-      )
-    ) {
-      const attachment = reaction.message.attachments.first();
-      if (attachment) {
-        const response = await fetch(attachment.url);
-        const buffer = await response.buffer();
-        await postInstagram(buffer);
+  const channelName = message.channel as TextChannel;
+  const messageAuthor = message.author.username;
+  const canDoSomething =
+   channelName.name === "promote-it-on-abrys" &&
+    messageAuthor != "promote-it-on-abrys";
+  if (canDoSomething) {
+    prettyLog(`${messageAuthor} says: ${message.content}`);
+    if (message.attachments.size > 0) {
+      message.reply("Beep boop, promoting image on abrys!");
+      const attachment: Attachment = message.attachments.first() as Attachment;
+      if (attachment.contentType?.startsWith("image/")) {
+        const didPromotToAbrys = await promoteItOnAbrys(attachment.url);
+        message.reply(didPromotToAbrys);
       }
     }
   }
 });
 
-async function postInstagram(imageBuffer) {
-  const publishResult = await ig.publish.photo({
-    file: imageBuffer,
-    caption: "Posted by Discord bot",
-  });
-  console.log("Image posted to Instagram:", publishResult.media.code);
-}
+discordClient.on("messageReactionAdd", async (reaction, user) => {
+  // if (
+  //   reaction.message.channel.name === "abrys" &&
+  //   reaction.emoji.name === "👍" &&
+  //   reaction.count >= 2
+  // ) {
+  //   const approvedUsers = ["angular emoji", "lulu.wav"];
+  //   const reactors = await reaction.users.fetch();
+  //   if (
+  //     approvedUsers.every((username) =>
+  //       reactors.some((u) => u.username === username)
+  //     )
+  //   ) {
+  //     const attachment = reaction.message.attachments.first();
+  //     if (attachment) {
+  //       const response = await fetch(attachment.url);
+  //       const buffer = await response.buffer();
+  //       await postInstagram(buffer);
+  //     }
+  //   }
+  // }
+});
+
+// async function postInstagram(imageBuffer: Buffer) {
+//   const publishResult = await ig.publish.photo({
+//     file: imageBuffer,
+//     caption: "Posted by Discord bot",
+//   });
+//   prettyLog(`Image posted to Instagram: ${publishResult.media.code}`);
+// }
 
 discordClient.login(token);
