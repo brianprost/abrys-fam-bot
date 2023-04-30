@@ -1,4 +1,4 @@
-import { Attachment, Client, GatewayIntentBits } from "discord.js";
+import { Attachment, Client, GatewayIntentBits, TextChannel } from "discord.js";
 // import { IgApiClient } from "instagram-private-api";
 // fs
 import fs from "fs";
@@ -54,14 +54,16 @@ discordClient.once("ready", async () => {
 });
 
 discordClient.on("messageCreate", async (message) => {
+  const channelName = message.channel as TextChannel;
+  const messageAuthor = message.author.username;
   const canDoSomething =
-    message.channel.name === "promote-it-on-abrys" &&
-    message.author.username != "promote-it-on-abrys";
+   channelName.name === "promote-it-on-abrys" &&
+    messageAuthor != "promote-it-on-abrys";
   if (canDoSomething) {
-    prettyLog(`${message.author.username} says: ${message.content}`);
+    prettyLog(`${messageAuthor} says: ${message.content}`);
     if (message.attachments.size > 0) {
       message.reply("Beep boop, promoting image on abrys!");
-      const attachment: Attachment = message.attachments.first() as Attachment;
+      const attachment = message.attachments.first() as Attachment;
       if (attachment.contentType?.startsWith("image/")) {
         const didPromotToAbrys = await promoteItOnAbrys(attachment.url);
         message.reply(didPromotToAbrys);
@@ -93,12 +95,12 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
   // }
 });
 
-async function postInstagram(imageBuffer) {
-  const publishResult = await ig.publish.photo({
-    file: imageBuffer,
-    caption: "Posted by Discord bot",
-  });
-  prettyLog("Image posted to Instagram:", publishResult.media.code);
-}
+// async function postInstagram(imageBuffer: Buffer) {
+//   const publishResult = await ig.publish.photo({
+//     file: imageBuffer,
+//     caption: "Posted by Discord bot",
+//   });
+//   prettyLog("Image posted to Instagram:", publishResult.media.code);
+// }
 
 discordClient.login(token);
