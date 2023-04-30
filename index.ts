@@ -1,7 +1,4 @@
 import { Attachment, Client, GatewayIntentBits, TextChannel } from "discord.js";
-// import { IgApiClient } from "instagram-private-api";
-// fs
-import fs from "fs";
 import * as dotenv from "dotenv";
 dotenv.config();
 
@@ -9,15 +6,20 @@ function prettyLog(message: string) {
   console.log(`🤖 new message: ${message}`);
 }
 
-async function promoteItOnAbrys(url: string) {
-  prettyLog(`image url: ${url}`);
+async function promoteItOnAbrys(url: string, discordUser: string): Promise<string> {
+  prettyLog(`image url: ${url} from ${discordUser}`);
   try {
-    const writeStream = fs.createWriteStream("image.png");
-    const response = await fetch(url);
-    const blob = await response.blob();
-    const arrayBuffer = await blob.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    await writeStream.write(buffer);
+    // Todo: this is a temp
+    const response = await fetch("https://frostchildren-website.vercel.app/api/promote-it-on-abrys-fam", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ url, discordUser }),
+    });
+    const data = await response.json();
+    const popstarStatus = data.popstarStatus as string;
+    return popstarStatus;
   } catch (error) {
     return `error promoting to abrys: ${error}`;
   }
@@ -25,10 +27,6 @@ async function promoteItOnAbrys(url: string) {
 }
 
 const token = process.env.DISCORD_TOKEN;
-const [igUsername, igPassword] = [
-  process.env.igUsername,
-  process.env.igPassword,
-];
 
 const discordClient = new Client({
   intents: [
@@ -39,34 +37,26 @@ const discordClient = new Client({
   ],
 });
 
-// const ig = new IgApiClient();
-
-// async function loginInstagram() {
-//   ig.state.generateDevice(igUsername);
-//   await ig.simulate.preLoginFlow();
-//   await ig.account.login(igUsername, igPassword);
-//   await ig.simulate.postLoginFlow();
-// }
-
 discordClient.once("ready", async () => {
   prettyLog("Bot is ready!");
-  // await loginInstagram();
 });
 
 discordClient.on("messageCreate", async (message) => {
   const channelName = message.channel as TextChannel;
   const messageAuthor = message.author.username;
   const canDoSomething =
-   channelName.name === "promote-it-on-abrys" &&
+    channelName.name === "abrys-fam" &&
     messageAuthor != "promote-it-on-abrys";
   if (canDoSomething) {
     prettyLog(`${messageAuthor} says: ${message.content}`);
     if (message.attachments.size > 0) {
-      message.reply("Beep boop, promoting image on abrys!");
+      message.reply("Beep boop, summoning an abrys to post this on @abrys_fam...");
       const attachment = message.attachments.first() as Attachment;
       if (attachment.contentType?.startsWith("image/")) {
-        const didPromotToAbrys = await promoteItOnAbrys(attachment.url);
-        message.reply(didPromotToAbrys);
+        const didPromoteToAbrys = await promoteItOnAbrys(attachment.url, messageAuthor)
+        // TODO: get the reply to work
+        // didPromoteToAbrys && message.reply("Promoted on @abrys_fam")
+        
       }
     }
   }
@@ -94,13 +84,5 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
   //   }
   // }
 });
-
-// async function postInstagram(imageBuffer: Buffer) {
-//   const publishResult = await ig.publish.photo({
-//     file: imageBuffer,
-//     caption: "Posted by Discord bot",
-//   });
-//   prettyLog("Image posted to Instagram:", publishResult.media.code);
-// }
 
 discordClient.login(token);
