@@ -4,6 +4,6 @@ FROM node:18
 COPY package.json ./
 RUN npm install
 
-COPY index.ts tsconfig.json .env ./
+COPY index.ts tsconfig.json ./
 
 CMD [ "npm", "start" ]
