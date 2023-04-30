@@ -40,48 +40,50 @@ discordClient.once("ready", async () => {
   prettyLog("Bot is ready!");
 });
 
-discordClient.on("messageCreate", async (message) => {
-  const channelName = message.channel as TextChannel;
-  const messageAuthor = message.author.username;
-  const canDoSomething =
+// discordClient.on("messageCreate", async (message) => {
+//   const channelName = message.channel as TextChannel;
+//   const messageAuthor = message.author.username;
+//   const canDoSomething =
+//     channelName.name === "abrys-fam" &&
+//     messageAuthor != "promote-it-on-abrys-fam";
+//   if (canDoSomething) {
+//     if (message.attachments.size > 0) {
+//       prettyLog(`${messageAuthor} says: ${message.content}`);
+//       // message.reply("Beep boop, summoning an abrys to post this on @abrys_fam...");
+//       const attachment = message.attachments.first() as Attachment;
+//       if (attachment.contentType?.startsWith("image/")) {
+//         // const didPromoteToAbrys = await promoteItOnAbrys(attachment.url, messageAuthor)
+//         // TODO: get the reply to work
+//         // didPromoteToAbrys && message.reply("Promoted on @abrys_fam")
+
+//       }
+//     }
+//   }
+// });
+
+discordClient.on("messageReactionAdd", async (reaction, user) => {
+  const channelName = reaction.message.channel as TextChannel;
+  const reactionAuthor = user.username!;
+  if (
     channelName.name === "abrys-fam" &&
-    messageAuthor != "promote-it-on-abrys";
-  if (canDoSomething) {
-    if (message.attachments.size > 0) {
-      prettyLog(`${messageAuthor} says: ${message.content}`);
-      message.reply("Beep boop, summoning an abrys to post this on @abrys_fam...");
-      const attachment = message.attachments.first() as Attachment;
-      if (attachment.contentType?.startsWith("image/")) {
-        const didPromoteToAbrys = await promoteItOnAbrys(attachment.url, messageAuthor)
-        // TODO: get the reply to work
-        // didPromoteToAbrys && message.reply("Promoted on @abrys_fam")
-        
+    reaction.emoji.name === "👍" &&
+    reaction.count && reaction.count > 1
+
+  ) {
+    const approvedUsers = ["angular emoji", "lulu.wav"];
+    const reactors = await reaction.users.fetch();
+    if (
+      approvedUsers.every((username) =>
+        reactors.some((u) => u.username === username)
+      )
+    ) {
+      const attachment = reaction.message.attachments.first();
+      if (attachment) {
+        const didPromoteToAbrys = await promoteItOnAbrys(attachment.url, reactionAuthor);
+        reaction.message.reply("Beep boop, Summoning an abrys to promote this  on @abrys_fam");
       }
     }
   }
-});
-
-discordClient.on("messageReactionAdd", async (reaction, user) => {
-  // if (
-  //   reaction.message.channel.name === "abrys" &&
-  //   reaction.emoji.name === "👍" &&
-  //   reaction.count >= 2
-  // ) {
-  //   const approvedUsers = ["angular emoji", "lulu.wav"];
-  //   const reactors = await reaction.users.fetch();
-  //   if (
-  //     approvedUsers.every((username) =>
-  //       reactors.some((u) => u.username === username)
-  //     )
-  //   ) {
-  //     const attachment = reaction.message.attachments.first();
-  //     if (attachment) {
-  //       const response = await fetch(attachment.url);
-  //       const buffer = await response.buffer();
-  //       await postInstagram(buffer);
-  //     }
-  //   }
-  // }
 });
 
 discordClient.login(token);
