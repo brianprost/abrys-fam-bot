@@ -1,13 +1,15 @@
-import { Attachment, Client, GatewayIntentBits, TextChannel } from "discord.js";
+import { Client, GatewayIntentBits, TextChannel } from "discord.js";
 import * as dotenv from "dotenv";
 dotenv.config();
 
+const approvedUsers = ["angular emoji", "luluwav"]
+
 function prettyLog(message: string) {
-  console.log(`🤖 new message: ${message}`);
+  console.log(`🤖 ${message}`);
 }
 
 async function promoteItOnAbrys(url: string, discordUser: string): Promise<string> {
-  prettyLog(`image url: ${url} from ${discordUser}`);
+  prettyLog(`Attempting to post image url: ${url} from Discord user: ${discordUser}`);
   try {
     // Todo: this is a temp
     const response = await fetch("https://frostchildren-website.vercel.app/api/promote-it-on-abrys-fam", {
@@ -40,37 +42,15 @@ discordClient.once("ready", async () => {
   prettyLog("Bot is ready!");
 });
 
-// discordClient.on("messageCreate", async (message) => {
-//   const channelName = message.channel as TextChannel;
-//   const messageAuthor = message.author.username;
-//   const canDoSomething =
-//     channelName.name === "abrys-fam" &&
-//     messageAuthor != "promote-it-on-abrys-fam";
-//   if (canDoSomething) {
-//     if (message.attachments.size > 0) {
-//       prettyLog(`${messageAuthor} says: ${message.content}`);
-//       // message.reply("Beep boop, summoning an abrys to post this on @abrys_fam...");
-//       const attachment = message.attachments.first() as Attachment;
-//       if (attachment.contentType?.startsWith("image/")) {
-//         // const didPromoteToAbrys = await promoteItOnAbrys(attachment.url, messageAuthor)
-//         // TODO: get the reply to work
-//         // didPromoteToAbrys && message.reply("Promoted on @abrys_fam")
-
-//       }
-//     }
-//   }
-// });
-
 discordClient.on("messageReactionAdd", async (reaction, user) => {
-  const channelName = reaction.message.channel as TextChannel;
-  const reactionAuthor = user.username!;
+  const channelName = (reaction.message.channel as TextChannel).name;
+  const messageAuthor = reaction.message.author!.username;
   if (
-    channelName.name === "abrys-fam" &&
-    reaction.emoji.name === "👍" &&
-    reaction.count && reaction.count > 1
-
+    channelName === "abrys-fam" &&
+    approvedUsers.includes(user.username!) &&
+    reaction.count && reaction.count > 0
   ) {
-    const approvedUsers = ["angular emoji", "lulu.wav"];
+    console.log(`${messageAuthor} reacted with ${reaction.emoji.name}`);
     const reactors = await reaction.users.fetch();
     if (
       approvedUsers.every((username) =>
@@ -79,8 +59,8 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
     ) {
       const attachment = reaction.message.attachments.first();
       if (attachment) {
-        const didPromoteToAbrys = await promoteItOnAbrys(attachment.url, reactionAuthor);
-        reaction.message.reply("Beep boop, Summoning an abrys to promote this  on @abrys_fam");
+        await promoteItOnAbrys(attachment.url, messageAuthor);
+        reaction.message.reply("Beep boop, Summoning an abrys to promote this on @abrys_fam");
       }
     }
   }
