@@ -60,7 +60,7 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
       const attachment = reaction.message.attachments.first();
       if (attachment) {
         await promoteItOnAbrys(attachment.url, messageAuthor);
-        reaction.message.reply("Beep boop, Summoning an abrys to promote this on @abrys_fam");
+        reaction.message.reply("Beep boop. Summoning an abrys to promote this on @abrys_fam");
       }
     }
   }
