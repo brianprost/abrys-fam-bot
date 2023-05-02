@@ -59,7 +59,7 @@ async function promoteItOnAbrys(url: string, discordUser: string): Promise<{ did
     const didPromoteToAbrysFamInstagram = await postToInstagram(url, discordUser);
 
     await setDoc(doc(firestore, `discord/bots/promote-it-on-abrys-fam/${discordUser}_${imageFileName}`), {
-      promoted_on_abrys_fam: didPromoteToAbrysFamInstagram,
+      promoted_on_abrys_fam: didPromoteToAbrysFamInstagram.didPromote,
     }, { merge: true });
     return { didPromote: didPromoteToAbrysFamInstagram.didPromote, response: didPromoteToAbrysFamInstagram.response };
   } catch (error) {
