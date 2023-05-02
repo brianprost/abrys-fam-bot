@@ -1,4 +1,5 @@
 import { initializeApp } from "firebase/app";
+import { IgApiClient } from "instagram-private-api";
 import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
 import { Client, GatewayIntentBits, TextChannel } from "discord.js";
 import * as dotenv from "dotenv";
@@ -51,24 +52,36 @@ async function promoteItOnAbrys(url: string, discordUser: string): Promise<{ did
       discord_user: discordUser,
     });
 
-    // Todo: this is a temp
-    const response = await fetch("https://frostchildren-website.vercel.app/api/promote-it-on-abrys-fam", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ url, discordUser }),
-    });
-    const data = await response.json();
-    const promotionStatus = data.success as boolean;
+    const didPromoteToAbrysFamInstagram = await postToInstagram(url, discordUser);
+
     await setDoc(doc(firestore, `discord/bots/promote-it-on-abrys-fam/${discordUser}_${imageFileName}`), {
-      sent_to_promotion_api: promotionStatus,
+      sent_to_promotion_api: didPromoteToAbrysFamInstagram,
     }, { merge: true });
     return { didPromote: true, response: "Successfully promoted" };
   } catch (error) {
     const timestamp = new Date();
     botLog(`${timestamp} Error promoting ${discordUser}'s ${imageFileName} to @abrys_fam: ${error}`);
     return { didPromote: false, response: `Error promoting. Tell @SleepRides to look at the logs around ${timestamp}` };
+  }
+}
+
+async function postToInstagram(url: string, discordUser: string) {
+  const ig = new IgApiClient();
+  ig.state.generateDevice(process.env.IG_USERNAME!);
+  await ig.account.login(process.env.IG_USERNAME!, process.env.IG_PASSWORD!);
+  const response = await fetch(url);
+  const blob = await response.blob();
+  const arrayBuffer = await blob.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  try {
+    await ig.publish.photo({
+      file: buffer,
+      caption: "Promoted on @abrys_fam by Discord user " + discordUser,
+    });
+    return true;
+  } catch (e) {
+    console.log("🤖" + e);
+    return false;
   }
 }
 
