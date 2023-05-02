@@ -1,12 +1,21 @@
 import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-import { getFirestore, doc, setDoc } from "firebase/firestore";
+import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
 import { Client, GatewayIntentBits, TextChannel } from "discord.js";
 import * as dotenv from "dotenv";
 
 dotenv.config();
-
 const APPROVED_USERS = ["angular emoji", "luluwav", "SleepRides"]
+
+const discordToken = process.env.DISCORD_TOKEN;
+
+const discordClient = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMessageReactions,
+  ],
+});
 
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
@@ -21,14 +30,21 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 const firestore = getFirestore(firebaseApp);
 
-
-function prettyLog(message: string) {
+function botLog(message: string) {
   console.log(`🤖 ${message}`);
 }
 
-async function promoteItOnAbrys(url: string, discordUser: string): Promise<boolean> {
-  prettyLog(`Attempting to post image url: ${url} from Discord user ${discordUser}`);
+async function promoteItOnAbrys(url: string, discordUser: string): Promise<{ didPromote: boolean, response: string }> {
+  botLog(`Attempting to post image url: ${url} from Discord user ${discordUser}`);
+
   const imageFileName = url.split("/").pop()?.split(".")[0].normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const firestoreRecord = await getDoc(doc(firestore, `discord/bots/promote-it-on-abrys-fam/${discordUser}_${imageFileName}`));
+  const hasBeenPromoted = firestoreRecord.exists() && Boolean(firestoreRecord.data().promoted_on_abrys_fam);
+
+  if (hasBeenPromoted) {
+    botLog(`${discordUser}'s ${imageFileName} has already been promoted`);
+    return { didPromote: false, response: "Already promoted" };
+  }
   try {
     await setDoc(doc(firestore, `discord/bots/promote-it-on-abrys-fam/${discordUser}_${imageFileName}`), {
       image_url: url,
@@ -48,38 +64,26 @@ async function promoteItOnAbrys(url: string, discordUser: string): Promise<boole
     await setDoc(doc(firestore, `discord/bots/promote-it-on-abrys-fam/${discordUser}_${imageFileName}`), {
       sent_to_promotion_api: promotionStatus,
     }, { merge: true });
-    return promotionStatus;
+    return { didPromote: true, response: "Successfully promoted" };
   } catch (error) {
-    console.log(error);
-    return false;
+    const timestamp = new Date();
+    botLog(`${timestamp} Error promoting ${discordUser}'s ${imageFileName} to @abrys_fam: ${error}`);
+    return { didPromote: false, response: `Error promoting. Tell @SleepRides to look at the logs around ${timestamp}` };
   }
 }
 
-const token = process.env.DISCORD_TOKEN;
-
-const discordClient = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMessageReactions,
-  ],
-});
-
 discordClient.once("ready", async () => {
-  prettyLog("Bot is ready!");
+  botLog("Bot is ready!");
 });
 
 discordClient.on("messageReactionAdd", async (reaction, user) => {
   const channelName = (reaction.message.channel as TextChannel).name;
   const messageAuthor = reaction.message.author!.username;
-  const hasAlreadyBeenPromoted = false;
 
   if (
     channelName === "abrys-fam" &&
     APPROVED_USERS.includes(user.username!) &&
-    reaction.count && reaction.count > 0 &&
-    hasAlreadyBeenPromoted
+    reaction.count && reaction.count > 0
   ) {
     console.log(`${messageAuthor} reacted with ${reaction.emoji.name}`);
     const reactors = await reaction.users.fetch();
@@ -90,11 +94,12 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
     ) {
       const attachment = reaction.message.attachments.first();
       if (attachment) {
+        reaction.message.reply("Beep boop. Summoning an abrys to promote this on @abrys_fam")
         const didPromoteItOnAbrysFam = await promoteItOnAbrys(attachment.url, messageAuthor);
-        didPromoteItOnAbrysFam ? reaction.message.reply("Beep boop. Summoning an abrys to promote this on @abrys_fam") : reaction.message.reply("Beep boop. There was an error 😢🤖. Did not promote to @abrys_fam");
+        didPromoteItOnAbrysFam && reaction.message.reply(didPromoteItOnAbrysFam.response);
       }
     }
   }
 });
 
-discordClient.login(token);
+discordClient.login(discordToken);
