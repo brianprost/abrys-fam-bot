@@ -3,7 +3,10 @@ import { getAnalytics } from "firebase/analytics";
 import { getFirestore, doc, setDoc } from "firebase/firestore";
 import { Client, GatewayIntentBits, TextChannel } from "discord.js";
 import * as dotenv from "dotenv";
+
 dotenv.config();
+
+const APPROVED_USERS = ["angular emoji", "luluwav", "SleepRides"]
 
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
@@ -16,29 +19,24 @@ const firebaseConfig = {
 }
 
 const firebaseApp = initializeApp(firebaseConfig);
-// const analytics = getAnalytics(firebaseApp);
 const firestore = getFirestore(firebaseApp);
 
-// const approvedUsers = ["angular emoji", "luluwav"]
-const approvedUsers = ["SleepRides"]
 
 function prettyLog(message: string) {
   console.log(`🤖 ${message}`);
 }
 
 async function promoteItOnAbrys(url: string, discordUser: string): Promise<boolean> {
-  prettyLog(`Attempting to post image url: ${url} from Discord user: ${discordUser}`);
-  // get the image file name minus the file extension (".jpg") from the url
+  prettyLog(`Attempting to post image url: ${url} from Discord user ${discordUser}`);
   const imageFileName = url.split("/").pop()?.split(".")[0].normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   try {
-    // submit to firebase under discord/bots/promote-it-on-abrys-fam/
     await setDoc(doc(firestore, `discord/bots/promote-it-on-abrys-fam/${discordUser}_${imageFileName}`), {
-      imageUrl: url,
-      discordUser: discordUser,
+      image_url: url,
+      discord_user: discordUser,
     });
 
     // Todo: this is a temp
-    const response = await fetch("http://localhost:3000/api/promote-it-on-abrys-fam", {
+    const response = await fetch("https://frostchildren-website.vercel.app/api/promote-it-on-abrys-fam", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -48,7 +46,7 @@ async function promoteItOnAbrys(url: string, discordUser: string): Promise<boole
     const data = await response.json();
     const promotionStatus = data.success as boolean;
     await setDoc(doc(firestore, `discord/bots/promote-it-on-abrys-fam/${discordUser}_${imageFileName}`), {
-      sentToPromotionApi: promotionStatus,
+      sent_to_promotion_api: promotionStatus,
     }, { merge: true });
     return promotionStatus;
   } catch (error) {
@@ -75,15 +73,18 @@ discordClient.once("ready", async () => {
 discordClient.on("messageReactionAdd", async (reaction, user) => {
   const channelName = (reaction.message.channel as TextChannel).name;
   const messageAuthor = reaction.message.author!.username;
+  const hasAlreadyBeenPromoted = false;
+
   if (
     channelName === "abrys-fam" &&
-    approvedUsers.includes(user.username!) &&
-    reaction.count && reaction.count > 0
+    APPROVED_USERS.includes(user.username!) &&
+    reaction.count && reaction.count > 0 &&
+    hasAlreadyBeenPromoted
   ) {
     console.log(`${messageAuthor} reacted with ${reaction.emoji.name}`);
     const reactors = await reaction.users.fetch();
     if (
-      approvedUsers.every((username) =>
+      APPROVED_USERS.every((username) =>
         reactors.some((u) => u.username === username)
       )
     ) {
