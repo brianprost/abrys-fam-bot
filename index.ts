@@ -84,7 +84,7 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
     console.log(`${messageAuthor} reacted with ${reaction.emoji.name}`);
     const reactors = await reaction.users.fetch();
     if (
-      APPROVED_USERS.every((username) =>
+      APPROVED_USERS.some((username) =>
         reactors.some((u) => u.username === username)
       )
     ) {
