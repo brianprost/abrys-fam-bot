@@ -2,6 +2,8 @@ import { initializeApp } from "firebase/app";
 import { IgApiClient, MediaRepositoryConfigureResponseRootObject } from "instagram-private-api";
 import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
 import { Client, GatewayIntentBits, TextChannel } from "discord.js";
+import axios from "axios";
+import sharp from "sharp";
 import * as dotenv from "dotenv";
 
 dotenv.config();
@@ -38,17 +40,19 @@ function botLog(message: string) {
 async function promoteItOnAbrys(url: string, discordUser: string): Promise<{ didPromote: boolean, response: string }> {
   botLog(`Attempting to post image url: ${url} from Discord user ${discordUser}`);
 
-  if (url.endsWith(".png")) {
-    botLog("Skipping due to .png extension");
-    return { didPromote: false, response: "Image was a PNG and I'm currently allergic to PNG. (Real talk, there's a bug with PNG. I'm working on it.)" };
+  if (url.match(/\.(jpe?g|png|gif|bmp|webp|tiff?|heic|heif)$/i) == null) {
+    botLog(`${discordUser}'s image is not a valid image`);
+    return { didPromote: false, response: "Not a valid image" };
   }
   const imageFileName = url.split("/").pop()?.split(".")[0].normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
   const firestoreRecord = await getDoc(doc(firestore, `discord/bots/promote-it-on-abrys-fam/${discordUser}_${imageFileName}`));
+
   const hasBeenPromoted = firestoreRecord.exists() && Boolean(firestoreRecord.data().promoted_on_abrys_fam);
 
   if (hasBeenPromoted) {
     botLog(`${discordUser}'s ${imageFileName} has already been promoted`);
-    return { didPromote: false, response: "Already promoted" };
+    return { didPromote: false, response: "I GET IT. You like this photo, but you already promoted it." };
   }
   try {
     await setDoc(doc(firestore, `discord/bots/promote-it-on-abrys-fam/${discordUser}_${imageFileName}`), {
@@ -60,29 +64,41 @@ async function promoteItOnAbrys(url: string, discordUser: string): Promise<{ did
 
     await setDoc(doc(firestore, `discord/bots/promote-it-on-abrys-fam/${discordUser}_${imageFileName}`), {
       promoted_on_abrys_fam: didPromoteToAbrysFamInstagram.didPromote,
+      ig_post_code: didPromoteToAbrysFamInstagram.didPromote && `https://www.instagram.com/p/${didPromoteToAbrysFamInstagram.igPostCode}/`,
     }, { merge: true });
+
     return { didPromote: didPromoteToAbrysFamInstagram.didPromote, response: didPromoteToAbrysFamInstagram.response };
+
   } catch (error) {
     const timestamp = new Date();
     botLog(`${timestamp} Error promoting ${discordUser}'s ${imageFileName} to @abrys_fam: ${error}`);
+
     return { didPromote: false, response: `Error promoting. Tell @SleepRides to look at the logs around ${timestamp}` };
   }
 }
 
-async function postToInstagram(url: string, discordUser: string): Promise<{ didPromote: boolean, response: string }> {
+async function postToInstagram(url: string, discordUser: string): Promise<{ didPromote: boolean, response: string, igPostCode?: string }> {
+
   const ig = new IgApiClient();
   ig.state.generateDevice(process.env.IG_USERNAME!);
   await ig.account.login(process.env.IG_USERNAME!, process.env.IG_PASSWORD!);
-  const response = await fetch(url);
-  const blob = await response.blob();
-  const arrayBuffer = await blob.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
+
+  const { data: photoArrayBuffer, headers } = await axios.get<ArrayBuffer>(url, { responseType: "arraybuffer" });
+  let photoBuffer = Buffer.from(photoArrayBuffer);
+
+  if (headers["content-type"] !== "image/jpeg") {
+    photoBuffer = await sharp(photoBuffer).jpeg().toBuffer();
+  }
+  const photo = {
+    file: photoBuffer,
+    caption: "Promoted on @abrys_fam by Discord user " + discordUser,
+  }
   try {
-    const res: MediaRepositoryConfigureResponseRootObject = await ig.publish.photo({
-      file: buffer,
-      caption: "Promoted on @abrys_fam by Discord user " + discordUser,
-    });
-    return { didPromote: true, response: res.status === "ok" ? "Successfully promoted" : "Failed to promote" };
+    const res: MediaRepositoryConfigureResponseRootObject = await ig.publish.photo(photo);
+    const igPostCode = res.media.code;
+    botLog(`Photo uploaded: https://www.instagram.com/p/${igPostCode}/`);
+    return { didPromote: true, response: res.status === "ok" ? `Promoted to https://www.instagram.com/p/${igPostCode}/` : "Weird-ass error. You should never be reading this message. Tell @SleepRides to look at the logs", igPostCode: igPostCode };
+
   } catch (e) {
     console.log("🤖" + e);
     return { didPromote: false, response: e };
@@ -113,7 +129,12 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
       if (attachment) {
         reaction.message.reply("Beep boop. Summoning an abrys to promote this on @abrys_fam")
         const didPromoteItOnAbrysFam = await promoteItOnAbrys(attachment.url, messageAuthor);
-        didPromoteItOnAbrysFam && reaction.message.reply(didPromoteItOnAbrysFam.response);
+        try {
+          didPromoteItOnAbrysFam.didPromote && reaction.message.reply(didPromoteItOnAbrysFam.response);
+        } catch (error) {
+          console.log("🤖" + error);
+          reaction.message.reply(`⛔️ Uh oh, ${error}`)
+        }
       }
     }
   }
