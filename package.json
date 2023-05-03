@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "ts-node --esm index.ts"
+    "start": "ts-node --esm index.ts",
+    "png": "nodemon --exec ts-node --esm png.ts"
   },
   "author": "",
   "license": "ISC",
@@ -14,7 +15,8 @@
     "discord.js": "^14.9.0",
     "dotenv": "^16.0.3",
     "firebase": "^9.21.0",
-    "instagram-private-api": "^1.45.3"
+    "instagram-private-api": "^1.45.3",
+    "nodemon": "^2.0.22"
   },
   "devDependencies": {
     "ts-node": "^10.9.1",
