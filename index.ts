@@ -70,19 +70,24 @@ async function promoteItOnAbrys(url: string, discordUser: string): Promise<{ did
 }
 
 async function postToInstagram(url: string, discordUser: string): Promise<{ didPromote: boolean, response: string }> {
+
   const ig = new IgApiClient();
   ig.state.generateDevice(process.env.IG_USERNAME!);
   await ig.account.login(process.env.IG_USERNAME!, process.env.IG_PASSWORD!);
+
   const response = await fetch(url);
   const blob = await response.blob();
   const arrayBuffer = await blob.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
+
   try {
     const res: MediaRepositoryConfigureResponseRootObject = await ig.publish.photo({
       file: buffer,
       caption: "Promoted on @abrys_fam by Discord user " + discordUser,
     });
+
     return { didPromote: true, response: res.status === "ok" ? "Successfully promoted" : "Failed to promote" };
+    
   } catch (e) {
     console.log("🤖" + e);
     return { didPromote: false, response: e };
