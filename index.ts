@@ -130,7 +130,7 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
         reaction.message.reply("Beep boop. Summoning an abrys to promote this on @abrys_fam")
         const didPromoteItOnAbrysFam = await promoteItOnAbrys(attachment.url, messageAuthor);
         try {
-          didPromoteItOnAbrysFam.didPromote && reaction.message.reply(didPromoteItOnAbrysFam.response);
+          reaction.message.reply(didPromoteItOnAbrysFam.response);
         } catch (error) {
           console.log("🤖" + error);
           reaction.message.reply(`⛔️ Uh oh, ${error}`)
