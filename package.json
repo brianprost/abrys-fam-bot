@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "ts-node --esm index.ts",
-    "png": "nodemon --exec ts-node --esm png.ts"
+    "dev": "nodemon --exec ts-node --esm index.ts",
+    "start": "ts-node --esm index.ts"
   },
   "author": "",
   "license": "ISC",
