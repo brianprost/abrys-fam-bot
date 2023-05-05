@@ -114,7 +114,7 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
   const messageAuthor = reaction.message.author!.username;
 
   if (
-    channelName === "abrys-fam" &&
+    channelName.includes("abrys-fam") &&
     APPROVED_USERS.includes(user.username!) &&
     reaction.count && reaction.count > 0
   ) {
