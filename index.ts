@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { IgApiClient, MediaRepositoryConfigureResponseRootObject } from "instagram-private-api";
+import { IgApiClient } from "instagram-private-api";
 import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
 import { Client, GatewayIntentBits, TextChannel } from "discord.js";
 import axios from "axios";
@@ -44,13 +44,14 @@ async function promoteItOnAbrys(url: string, discordUser: string): Promise<{ did
     botLog(`${discordUser}'s image is not a valid image`);
     return { didPromote: false, response: "Not a valid image" };
   }
-  const imageFileName = url.split("/").pop()?.split(".")[0].normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const imageFileName = getImageFileName(url);
 
   const firestoreRecord = await getDoc(doc(firestore, `discord/bots/promote-it-on-abrys-fam/${discordUser}_${imageFileName}`));
 
   const hasBeenPromoted = firestoreRecord.exists() && Boolean(firestoreRecord.data().promoted_on_abrys_fam);
 
   if (hasBeenPromoted) {
+    // TODO: does this even get hit?
     botLog(`${discordUser}'s ${imageFileName} has already been promoted`);
     return { didPromote: false, response: "I GET IT. You like this photo, but you already promoted it." };
   }
@@ -94,15 +95,24 @@ async function postToInstagram(url: string, discordUser: string): Promise<{ didP
     caption: "Promoted on @abrys_fam by Discord user " + discordUser,
   }
   try {
-    const res: MediaRepositoryConfigureResponseRootObject = await ig.publish.photo(photo);
+    const res = await ig.publish.photo(photo);
     const igPostCode = res.media.code;
-    botLog(`Photo uploaded: https://www.instagram.com/p/${igPostCode}/`);
-    return { didPromote: true, response: res.status === "ok" ? `Promoted to https://www.instagram.com/p/${igPostCode}/` : "Weird-ass error. You should never be reading this message. Tell @SleepRides to look at the logs", igPostCode: igPostCode };
 
+    return { didPromote: true, response: res.status === "ok" ? `Promoted to https://www.instagram.com/p/${igPostCode}/` : "Weird-ass error. You should never be reading this message. Tell @SleepRides to look at the logs", igPostCode: igPostCode };
   } catch (e) {
     console.log("🤖" + e);
+
     return { didPromote: false, response: e };
   }
+}
+
+function getImageFileName(url: string): string {
+  return url.split("/").pop()?.split(".")[0].normalize("NFD").replace(/[\u0300-\u036f]/g, "") ?? "";
+}
+
+async function wasAlreadyPromoted(discordUser: string, imageFileName: string): Promise<boolean> {
+  const firestoreRecord = await getDoc(doc(firestore, `discord/bots/promote-it-on-abrys-fam/${discordUser}_${imageFileName}`));
+  return firestoreRecord.exists() && Boolean(firestoreRecord.data().promoted_on_abrys_fam);
 }
 
 discordClient.once("ready", async () => {
@@ -110,24 +120,25 @@ discordClient.once("ready", async () => {
 });
 
 discordClient.on("messageReactionAdd", async (reaction, user) => {
+  console.log(`Reaction ${reaction.emoji.name} from ${user.username}`);
+  const attachment = reaction.message.attachments.first();
+  if (!attachment) return;
   const channelName = (reaction.message.channel as TextChannel).name;
   const messageAuthor = reaction.message.author!.username;
+  const alreadyPromoted = await wasAlreadyPromoted(messageAuthor, getImageFileName(attachment.url));
+  if (alreadyPromoted) return
 
-  if (
-    channelName.includes("abrys-fam") &&
-    APPROVED_USERS.includes(user.username!) &&
-    reaction.count && reaction.count > 0
-  ) {
-    console.log(`${messageAuthor} reacted with ${reaction.emoji.name}`);
+  const isEligableToPromote = channelName.includes("abrys-fam") && APPROVED_USERS.includes(user.username!) && reaction.count! > 0
+
+  if (isEligableToPromote) {
     const reactors = await reaction.users.fetch();
     if (
       APPROVED_USERS.some((username) =>
         reactors.some((u) => u.username === username)
       )
     ) {
-      const attachment = reaction.message.attachments.first();
       if (attachment) {
-        reaction.message.reply("Beep boop. Summoning an abrys to promote this on @abrys_fam")
+        reaction.message.reply("Summoning an abrys to promote this on @abrys_fam ...")
         const didPromoteItOnAbrysFam = await promoteItOnAbrys(attachment.url, messageAuthor);
         try {
           reaction.message.reply(didPromoteItOnAbrysFam.response);
