@@ -120,12 +120,10 @@ discordClient.once("ready", async () => {
 });
 
 discordClient.on("messageReactionAdd", async (reaction, user) => {
-  console.log(`Reaction ${reaction.emoji.name} from ${user.username}`);
   const attachment = reaction.message.attachments.first();
-  if (!attachment) return;
   const channelName = (reaction.message.channel as TextChannel).name;
   const messageAuthor = reaction.message.author!.username;
-  const alreadyPromoted = await wasAlreadyPromoted(messageAuthor, getImageFileName(attachment.url));
+  const alreadyPromoted = await wasAlreadyPromoted(messageAuthor, getImageFileName(attachment!.url));
   if (alreadyPromoted) return
 
   const isEligableToPromote = channelName.includes("abrys-fam") && APPROVED_USERS.includes(user.username!) && reaction.count! > 0
