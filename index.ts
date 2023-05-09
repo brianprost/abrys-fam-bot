@@ -120,10 +120,10 @@ discordClient.once("ready", async () => {
 });
 
 discordClient.on("messageReactionAdd", async (reaction, user) => {
-  const attachment = await reaction.message.attachments.first();
+  const attachment = reaction.message.attachments.first();
   const channelName = (reaction.message.channel as TextChannel).name;
   const messageAuthor = reaction.message.author!.username;
-  const alreadyPromoted = await attachment && wasAlreadyPromoted(messageAuthor, getImageFileName(attachment!.url));
+  const alreadyPromoted = attachment && await wasAlreadyPromoted(messageAuthor, getImageFileName(attachment!.url));
   if (alreadyPromoted) return
 
   const isEligableToPromote = channelName.includes("abrys-fam") && APPROVED_USERS.includes(user.username!) && reaction.count! > 0
