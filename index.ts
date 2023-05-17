@@ -40,6 +40,12 @@ function botLog(message: string) {
 async function promoteItOnAbrys(url: string, discordUser: string): Promise<{ didPromote: boolean, response: string }> {
   botLog(`Attempting to post image url: ${url} from Discord user ${discordUser}`);
 
+  const { width, height } = await sharp(url).metadata();
+  if (width! < 320 || height! < 320) {
+    botLog(`${discordUser}'s image is too small`);
+    return { didPromote: false, response: "Image is too small" };
+  }
+
   if (url.match(/\.(jpe?g|png|gif|bmp|webp|tiff?|heic|heif)$/i) == null) {
     botLog(`${discordUser}'s image is not a valid image`);
     return { didPromote: false, response: "Not a valid image" };
@@ -92,7 +98,7 @@ async function postToInstagram(url: string, discordUser: string): Promise<{ didP
   }
   const photo = {
     file: photoBuffer,
-    caption: "Promoted on @abrys_fam by Discord user " + discordUser,
+    caption: `${discordUser} posted it on @abrys_fam.`
   }
   try {
     const res = await ig.publish.photo(photo);
@@ -136,9 +142,16 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
       )
     ) {
       if (attachment) {
-        reaction.message.reply("Summoning an abrys to promote this on @abrys_fam ...")
+        reaction.message.reply("Summoning an abrys to promote this on @abrys_fam ...");
         const didPromoteItOnAbrysFam = await promoteItOnAbrys(attachment.url, messageAuthor);
         try {
+          // // TODO: delete originial response and replace with new one
+          // reaction.message.channel.messages.fetch({ limit: 1 }).then((messages) => {
+          //   const lastMessage = messages.first();
+          //   if (lastMessage?.author.id === discordClient.user?.id) {
+          //     lastMessage.delete();
+          //   }
+          // });
           reaction.message.reply(didPromoteItOnAbrysFam.response);
         } catch (error) {
           console.log("🤖" + error);
