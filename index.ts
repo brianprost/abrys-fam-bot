@@ -2,7 +2,6 @@ import { initializeApp } from "firebase/app";
 import { IgApiClient } from "instagram-private-api";
 import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
 import { Client, GatewayIntentBits, TextChannel } from "discord.js";
-import axios from "axios";
 import sharp from "sharp";
 import * as dotenv from "dotenv";
 
@@ -39,12 +38,6 @@ function botLog(message: string) {
 
 async function promoteItOnAbrys(url: string, discordUser: string): Promise<{ didPromote: boolean, response: string }> {
   botLog(`Attempting to post image url: ${url} from Discord user ${discordUser}`);
-
-  const { width, height } = await sharp(url).metadata();
-  if (width! < 320 || height! < 320) {
-    botLog(`${discordUser}'s image is too small`);
-    return { didPromote: false, response: "Image is too small" };
-  }
 
   if (url.match(/\.(jpe?g|png|gif|bmp|webp|tiff?|heic|heif)$/i) == null) {
     botLog(`${discordUser}'s image is not a valid image`);
@@ -90,24 +83,26 @@ async function postToInstagram(url: string, discordUser: string): Promise<{ didP
   ig.state.generateDevice(process.env.IG_USERNAME!);
   await ig.account.login(process.env.IG_USERNAME!, process.env.IG_PASSWORD!);
 
-  const { data: photoArrayBuffer, headers } = await axios.get<ArrayBuffer>(url, { responseType: "arraybuffer" });
-  let photoBuffer = Buffer.from(photoArrayBuffer);
-
-  if (headers["content-type"] !== "image/jpeg") {
-    photoBuffer = await sharp(photoBuffer).jpeg().toBuffer();
+  const response = await fetch(url);
+  const imageBuffer = await response.arrayBuffer();
+  const metadata = await sharp(imageBuffer).metadata();
+  if (metadata.width! < 320 || metadata.height! < 320) {
+    botLog(`${discordUser}'s image is too small`);
+    return { didPromote: false, response: "Image is too small" };
   }
+
+  const photoBuffer = await sharp(imageBuffer).resize({ width: 1080, withoutEnlargement: true }).toBuffer();
   const photo = {
     file: photoBuffer,
     caption: `${discordUser} posted it on @abrys_fam.`
   }
+
   try {
     const res = await ig.publish.photo(photo);
     const igPostCode = res.media.code;
-
     return { didPromote: true, response: res.status === "ok" ? `Promoted to https://www.instagram.com/p/${igPostCode}/` : "Weird-ass error. You should never be reading this message. Tell @SleepRides to look at the logs", igPostCode: igPostCode };
   } catch (e) {
     console.log("🤖" + e);
-
     return { didPromote: false, response: e };
   }
 }
