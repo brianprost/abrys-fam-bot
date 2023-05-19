@@ -1,9 +1,6 @@
 lockfileVersion: '6.0'
 
 dependencies:
-  axios:
-    specifier: ^1.4.0
-    version: 1.4.0
   discord.js:
     specifier: ^14.9.0
     version: 14.9.0
@@ -24,9 +21,12 @@ dependencies:
     version: 0.32.1
 
 devDependencies:
+  '@types/node':
+    specifier: ^20.2.1
+    version: 20.2.1
   ts-node:
     specifier: ^10.9.1
-    version: 10.9.1(@types/node@18.16.3)(typescript@5.0.4)
+    version: 10.9.1(@types/node@20.2.1)(typescript@5.0.4)
   typescript:
     specifier: ^5.0.4
     version: 5.0.4
@@ -538,7 +538,7 @@ packages:
     engines: {node: ^8.13.0 || >=10.10.0}
     dependencies:
       '@grpc/proto-loader': 0.7.6
-      '@types/node': 18.16.3
+      '@types/node': 20.2.1
     dev: false
 
   /@grpc/proto-loader@0.6.13:
@@ -682,8 +682,8 @@ packages:
     resolution: {integrity: sha512-MqTGEo5bj5t157U6fA/BiDynNkn0YknVdh48CMPkTSpFTVmvao5UQmm7uEF6xBEo7qIMAlY/JSleYaE6VOdpaA==}
     dev: false
 
-  /@types/node@18.16.3:
-    resolution: {integrity: sha512-OPs5WnnT1xkCBiuQrZA4+YAV4HEJejmHneyraIaxsbev5yCEr6KMwINNFP9wQeFIw8FWcoTqF3vQsa5CDaI+8Q==}
+  /@types/node@20.2.1:
+    resolution: {integrity: sha512-DqJociPbZP1lbZ5SQPk4oag6W7AyaGMO6gSfRwq3PWl4PXTwJpRQJhDq4W0kzrg3w6tJ1SwlvGZ5uKFHY13LIg==}
 
   /@types/request-promise@4.1.48:
     resolution: {integrity: sha512-sLsfxfwP5G3E3U64QXxKwA6ctsxZ7uKyl4I28pMj3JvV+ztWECRns73GL71KMOOJME5u1A5Vs5dkBqyiR1Zcnw==}
@@ -696,7 +696,7 @@ packages:
     resolution: {integrity: sha512-whjk1EDJPcAR2kYHRbFl/lKeeKYTi05A15K9bnLInCVroNDCtXce57xKdI0/rQaA3K+6q0eFyUBPmqfSndUZdQ==}
     dependencies:
       '@types/caseless': 0.12.2
-      '@types/node': 18.16.3
+      '@types/node': 20.2.1
       '@types/tough-cookie': 4.0.2
       form-data: 2.5.1
     dev: false
@@ -708,7 +708,7 @@ packages:
   /@types/ws@8.5.4:
     resolution: {integrity: sha512-zdQDHKUgcX/zBc4GrwsE/7dVdAD8JR4EuiAXiiUhhfyIJXXb2+PrGshFyeXWQPMmmZ2XxgaqclgpIC7eTXc1mg==}
     dependencies:
-      '@types/node': 18.16.3
+      '@types/node': 20.2.1
     dev: false
 
   /abbrev@1.1.1:
@@ -780,16 +780,6 @@ packages:
 
   /aws4@1.12.0:
     resolution: {integrity: sha512-NmWvPnx0F1SfrQbYwOi7OeaNGokp9XhzNioJ/CSBs8Qa4vxug81mhJEAVZwxXuBmYB5KDRfMq/F3RR0BIU7sWg==}
-    dev: false
-
-  /axios@1.4.0:
-    resolution: {integrity: sha512-S4XCWMEmzvo64T9GfvQDOXgYRDJ/wsSZc7Jvdgx5u1sd0JwsuPLqb3SYmusag+edF6ziyMensPVqLTSc1PiSEA==}
-    dependencies:
-      follow-redirects: 1.15.2
-      form-data: 4.0.0
-      proxy-from-env: 1.1.0
-    transitivePeerDependencies:
-      - debug
     dev: false
 
   /balanced-match@1.0.2:
@@ -1128,16 +1118,6 @@ packages:
       - encoding
     dev: false
 
-  /follow-redirects@1.15.2:
-    resolution: {integrity: sha512-VQLG33o04KaQ8uYi2tVNbdrWp1QWxNNea+nmIB4EVM28v0hmP17z7aG1+wAkNzVq4KeXTq3221ye5qTJP91JwA==}
-    engines: {node: '>=4.0'}
-    peerDependencies:
-      debug: '*'
-    peerDependenciesMeta:
-      debug:
-        optional: true
-    dev: false
-
   /forever-agent@0.6.1:
     resolution: {integrity: sha512-j0KLYPhm6zeac4lz3oJ3o65qvgQCcPubiyotZrXqEaG4hNagNYO8qdlUrX5vwqv9ohqeT/Z3j6+yW067yWWdUw==}
     dev: false
@@ -1154,15 +1134,6 @@ packages:
   /form-data@2.5.1:
     resolution: {integrity: sha512-m21N3WOmEEURgk6B9GLOE4RuWOFf28Lhh9qGYeNlGq4VDXUlJy2th2slBNU8Gp8EzloYZOibZJ7t5ecIrFSjVA==}
     engines: {node: '>= 0.12'}
-    dependencies:
-      asynckit: 0.4.0
-      combined-stream: 1.0.8
-      mime-types: 2.1.35
-    dev: false
-
-  /form-data@4.0.0:
-    resolution: {integrity: sha512-ETEklSGi5t0QMZuiXoA/Q6vcnxcLQP5vdugSpuAyi6SVGi2clPPp+xgEhuMaHC+zGgn31Kd235W35f7Hykkaww==}
-    engines: {node: '>= 6'}
     dependencies:
       asynckit: 0.4.0
       combined-stream: 1.0.8
@@ -1567,7 +1538,7 @@ packages:
       '@protobufjs/pool': 1.1.0
       '@protobufjs/utf8': 1.1.0
       '@types/long': 4.0.2
-      '@types/node': 18.16.3
+      '@types/node': 20.2.1
       long: 4.0.0
     dev: false
 
@@ -1586,12 +1557,8 @@ packages:
       '@protobufjs/path': 1.1.2
       '@protobufjs/pool': 1.1.0
       '@protobufjs/utf8': 1.1.0
-      '@types/node': 18.16.3
+      '@types/node': 20.2.1
       long: 5.2.3
-    dev: false
-
-  /proxy-from-env@1.1.0:
-    resolution: {integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==}
     dev: false
 
   /psl@1.9.0:
@@ -1946,7 +1913,7 @@ packages:
     resolution: {integrity: sha512-k43M7uCG1AkTyxgnmI5MPwKoUvS/bRvLvUb7+Pgpdlmok8AoqmUaZxUUw8zKM5B1lqZrt41GjYgnvAi0fppqgQ==}
     dev: false
 
-  /ts-node@10.9.1(@types/node@18.16.3)(typescript@5.0.4):
+  /ts-node@10.9.1(@types/node@20.2.1)(typescript@5.0.4):
     resolution: {integrity: sha512-NtVysVPkxxrwFGUUxGYhfux8k78pQB3JqYBXlLRZgdGUqTO5wU/UyHop5p70iEbGhB7q5KmiZiU0Y3KlJrScEw==}
     hasBin: true
     peerDependencies:
@@ -1965,7 +1932,7 @@ packages:
       '@tsconfig/node12': 1.0.11
       '@tsconfig/node14': 1.0.3
       '@tsconfig/node16': 1.0.3
-      '@types/node': 18.16.3
+      '@types/node': 20.2.1
       acorn: 8.8.2
       acorn-walk: 8.2.0
       arg: 4.1.3
