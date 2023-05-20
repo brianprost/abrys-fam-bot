@@ -41,7 +41,7 @@ async function promoteItOnAbrys(
   discordUser: string
 ): Promise<{ didPromote: boolean; response: string }> {
   botLog(
-    `Attempting to post image url: ${url} from Discord user ${discordUser}`
+    `\nAttempting to post image url: ${url} from Discord user ${discordUser}`
   );
 
   if (url.match(/\.(jpe?g|png|gif|bmp|webp|tiff?|heic|heif)$/i) == null) {
