@@ -144,7 +144,7 @@ async function postToInstagram(
     .toBuffer();
   const photo = {
     file: photoBuffer,
-    caption: `${discordUser} posted it on @abrys_fam.`,
+    caption: `${discordUser} promoted it on @abrys_fam.`,
   };
 
   try {
