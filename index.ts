@@ -209,7 +209,7 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
   if (alreadyPromoted) return;
 
   const isEligableToPromote =
-    channelName.includes("abrystests") &&
+    channelName.includes("abrys-fam") &&
     APPROVED_USERS.includes(user.username!) &&
     reaction.count! > 0;
 
