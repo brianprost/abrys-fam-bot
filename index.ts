@@ -126,7 +126,13 @@ async function postToInstagram(
   await ig.account.login(process.env.IG_USERNAME!, process.env.IG_PASSWORD!);
 
   const response = await fetch(url);
-  const imageBuffer = await response.arrayBuffer();
+  let imageBuffer = await response.arrayBuffer();
+  const isPng = await response.headers.get("content-type")?.includes("png");
+  console.log(`🤖 isPng: ${isPng}`)
+  if (isPng) {
+    console.log("🤖 Converting to jpeg")
+    imageBuffer = await sharp(imageBuffer).jpeg().toBuffer();
+  }
   const metadata = await sharp(imageBuffer).metadata();
   if (metadata.width! < 320 || metadata.height! < 320) {
     botLog(`${discordUser}'s image is too small`);
@@ -144,6 +150,7 @@ async function postToInstagram(
   try {
     const res = await ig.publish.photo(photo);
     const igPostCode = res.media.code;
+    console.log(`🤖 Posted to Instagram: ${igPostCode}`)
     return {
       didPromote: true,
       response:
@@ -202,7 +209,7 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
   if (alreadyPromoted) return;
 
   const isEligableToPromote =
-    channelName.includes("abrys-fam") &&
+    channelName.includes("abrystests") &&
     APPROVED_USERS.includes(user.username!) &&
     reaction.count! > 0;
 
