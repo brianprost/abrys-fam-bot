@@ -36,6 +36,15 @@ function botLog(message: string) {
   console.log(`🤖 ${message}`);
 }
 
+process.on('uncaughtException', (err, origin) => {
+  botLog(`Caught exception: ${err}\n` + `Exception origin: ${origin}`);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  botLog(`Unhandled Rejection at:, ${promise}, reason:, ${reason}`);
+});
+
+
 async function promoteItOnAbrys(
   url: string,
   discordUser: string
@@ -209,7 +218,7 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
   if (alreadyPromoted) return;
 
   const isEligableToPromote =
-    channelName.includes("abrys-fam") &&
+    channelName.includes("abrystests") &&
     APPROVED_USERS.includes(user.username!) &&
     reaction.count! > 0;
 
