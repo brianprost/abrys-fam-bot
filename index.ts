@@ -32,6 +32,10 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 const firestore = getFirestore(firebaseApp);
 
+const ig = new IgApiClient();
+ig.state.generateDevice(process.env.IG_USERNAME!);
+await ig.account.login(process.env.IG_USERNAME!, process.env.IG_PASSWORD!);
+
 function botLog(message: string) {
   console.log(`🤖 ${message}`);
 }
@@ -92,18 +96,9 @@ async function postToInstagram(
   url: string,
   discordUser: string
 ): Promise<{ didPromote: boolean; response: string; igPostCode?: string }> {
-  const ig = new IgApiClient();
-  ig.state.generateDevice(process.env.IG_USERNAME!);
-  await ig.account.login(process.env.IG_USERNAME!, process.env.IG_PASSWORD!);
-
   const response = await fetch(url);
   let imageBuffer = await response.arrayBuffer();
-  const isPng = await response.headers.get("content-type")?.includes("png");
-  botLog(`isPng: ${isPng}`)
-  if (isPng) {
-    botLog("Converting to jpeg")
-    imageBuffer = await sharp(imageBuffer).jpeg().toBuffer();
-  }
+
   const metadata = await sharp(imageBuffer).metadata();
   if (metadata.width! < 320 || metadata.height! < 320) {
     botLog(`${discordUser}'s image is too small`);
@@ -121,7 +116,7 @@ async function postToInstagram(
   try {
     const res = await ig.publish.photo(photo);
     const igPostCode = res.media.code;
-    botLog(`Posted to Instagram: ${igPostCode}`)
+    botLog(`Promoted to Instagram: ${igPostCode}`)
     return {
       didPromote: true,
       response:
@@ -174,14 +169,12 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
     )
   );
 
-  botLog(`Noticed a pic from ${messageAuthor} because
-              ${user.username} reacted with a 
-              ${reaction.emoji.name}`)
-
-  if (dbRecord.exists()) { return };
+  if (dbRecord.data()?.promoted_on_insta) {
+    return;
+  }
 
   const isEligableToPromote =
-    channelName.includes("abrystests") &&
+    channelName.includes("abrys-fam") &&
     APPROVED_USERS.includes(user.username!) &&
     reaction.count! > 0;
 
@@ -202,13 +195,6 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
           postHash
         );
         try {
-          // // TODO: delete originial response and replace with new one
-          // reaction.message.channel.messages.fetch({ limit: 1 }).then((messages) => {
-          //   const lastMessage = messages.first();
-          //   if (lastMessage?.author.id === discordClient.user?.id) {
-          //     lastMessage.delete();
-          //   }
-          // });
           reaction.message.reply(didPromoteItOnAbrysFam.response);
         } catch (error) {
           botLog(error);
