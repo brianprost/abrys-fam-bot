@@ -38,7 +38,8 @@ function botLog(message: string) {
 
 async function promoteItOnAbrys(
   url: string,
-  discordUser: string
+  discordUser: string,
+  postHash: string
 ): Promise<{ didPromote: boolean; response: string }> {
   botLog(
     `\nAttempting to post image url: ${url} from Discord user ${discordUser}`
@@ -48,39 +49,7 @@ async function promoteItOnAbrys(
     botLog(`${discordUser}'s image is not a valid image`);
     return { didPromote: false, response: "Not a valid image" };
   }
-  const imageFileName = getImageFileName(url);
-
-  const firestoreRecord = await getDoc(
-    doc(
-      firestore,
-      `discord/bots/promote-it-on-abrys-fam/${discordUser}_${imageFileName}`
-    )
-  );
-
-  const hasBeenPromoted =
-    firestoreRecord.exists() &&
-    Boolean(firestoreRecord.data().promoted_on_abrys_fam);
-
-  if (hasBeenPromoted) {
-    // TODO: does this even get hit?
-    botLog(`${discordUser}'s ${imageFileName} has already been promoted`);
-    return {
-      didPromote: false,
-      response: "I GET IT. You like this photo, but you already promoted it.",
-    };
-  }
   try {
-    await setDoc(
-      doc(
-        firestore,
-        `discord/bots/promote-it-on-abrys-fam/${discordUser}_${imageFileName}`
-      ),
-      {
-        image_url: url,
-        discord_user: discordUser,
-      }
-    );
-
     const didPromoteToAbrysFamInstagram = await postToInstagram(
       url,
       discordUser
@@ -89,10 +58,12 @@ async function promoteItOnAbrys(
     await setDoc(
       doc(
         firestore,
-        `discord/bots/promote-it-on-abrys-fam/${discordUser}_${imageFileName}`
+        `promote-it-on-abrys-fam-bot/${postHash}`
       ),
       {
-        promoted_on_abrys_fam: didPromoteToAbrysFamInstagram.didPromote,
+        image_url: url,
+        discord_user: discordUser,
+        promoted_on_insta: didPromoteToAbrysFamInstagram.didPromote,
         ig_post_code:
           didPromoteToAbrysFamInstagram.didPromote &&
           `https://www.instagram.com/p/${didPromoteToAbrysFamInstagram.igPostCode}/`,
@@ -107,7 +78,7 @@ async function promoteItOnAbrys(
   } catch (error) {
     const timestamp = new Date();
     botLog(
-      `${timestamp} Error promoting ${discordUser}'s ${imageFileName} to @abrys_fam: ${error}`
+      `${timestamp} Error promoting ${discordUser}'s ${getImageFileName(url)} to @abrys_fam: ${error}`
     );
 
     return {
@@ -128,9 +99,9 @@ async function postToInstagram(
   const response = await fetch(url);
   let imageBuffer = await response.arrayBuffer();
   const isPng = await response.headers.get("content-type")?.includes("png");
-  console.log(`🤖 isPng: ${isPng}`)
+  botLog(`isPng: ${isPng}`)
   if (isPng) {
-    console.log("🤖 Converting to jpeg")
+    botLog("Converting to jpeg")
     imageBuffer = await sharp(imageBuffer).jpeg().toBuffer();
   }
   const metadata = await sharp(imageBuffer).metadata();
@@ -150,7 +121,7 @@ async function postToInstagram(
   try {
     const res = await ig.publish.photo(photo);
     const igPostCode = res.media.code;
-    console.log(`🤖 Posted to Instagram: ${igPostCode}`)
+    botLog(`Posted to Instagram: ${igPostCode}`)
     return {
       didPromote: true,
       response:
@@ -160,7 +131,7 @@ async function postToInstagram(
       igPostCode: igPostCode,
     };
   } catch (e) {
-    console.log("🤖" + e);
+    botLog(e);
     return { didPromote: false, response: e };
   }
 }
@@ -176,20 +147,14 @@ function getImageFileName(url: string): string {
   );
 }
 
-async function wasAlreadyPromoted(
-  discordUser: string,
-  imageFileName: string
-): Promise<boolean> {
-  const firestoreRecord = await getDoc(
-    doc(
-      firestore,
-      `discord/bots/promote-it-on-abrys-fam/${discordUser}_${imageFileName}`
-    )
-  );
-  return (
-    firestoreRecord.exists() &&
-    Boolean(firestoreRecord.data().promoted_on_abrys_fam)
-  );
+function formatDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hour = String(date.getHours()).padStart(2, '0');
+  const minute = String(date.getMinutes()).padStart(2, '0');
+  const second = String(date.getSeconds()).padStart(2, '0');
+  return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
 }
 
 discordClient.once("ready", async () => {
@@ -200,16 +165,23 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
   const attachment = reaction.message.attachments.first();
   const channelName = (reaction.message.channel as TextChannel).name;
   const messageAuthor = reaction.message.author!.username;
-  const alreadyPromoted =
-    attachment &&
-    (await wasAlreadyPromoted(
-      messageAuthor,
-      getImageFileName(attachment!.url)
-    ));
-  if (alreadyPromoted) return;
+  const messageDate = formatDate(reaction.message.createdAt);
+  const postHash = `${messageAuthor}_${messageDate}_${getImageFileName(attachment!.url)}`;
+  const dbRecord = await getDoc(
+    doc(
+      firestore,
+      `promote-it-on-abrys-fam-bot/${postHash}`
+    )
+  );
+
+  botLog(`Noticed a pic from ${messageAuthor} because
+              ${user.username} reacted with a 
+              ${reaction.emoji.name}`)
+
+  if (dbRecord.exists()) { return };
 
   const isEligableToPromote =
-    channelName.includes("abrys-fam") &&
+    channelName.includes("abrystests") &&
     APPROVED_USERS.includes(user.username!) &&
     reaction.count! > 0;
 
@@ -226,7 +198,8 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
         );
         const didPromoteItOnAbrysFam = await promoteItOnAbrys(
           attachment.url,
-          messageAuthor
+          messageAuthor,
+          postHash
         );
         try {
           // // TODO: delete originial response and replace with new one
@@ -238,7 +211,7 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
           // });
           reaction.message.reply(didPromoteItOnAbrysFam.response);
         } catch (error) {
-          console.log("🤖" + error);
+          botLog(error);
           reaction.message.reply(`⛔️ Uh oh, ${error}`);
         }
       }
