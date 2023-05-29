@@ -107,6 +107,7 @@ async function postToInstagram(
 
   const photoBuffer = await sharp(imageBuffer)
     .resize({ width: 1080, withoutEnlargement: true })
+    .jpeg({ quality: 100 })
     .toBuffer();
   const photo = {
     file: photoBuffer,
@@ -161,7 +162,7 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
   const channelName = (reaction.message.channel as TextChannel).name;
   const messageAuthor = reaction.message.author!.username;
   const messageDate = formatDate(reaction.message.createdAt);
-  const postHash = `${messageDate}_${messageAuthor}_${getImageFileName(attachment!.url)}`;
+  const postHash = `${messageDate}_${messageAuthor}_${getImageFileName(attachment?.url ?? "")}`;
   const dbRecord = await getDoc(
     doc(
       firestore,
