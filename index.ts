@@ -32,31 +32,31 @@ const firebaseConfig = {
 
 const firebaseApp = initializeApp(firebaseConfig);
 const firestore = getFirestore(firebaseApp);
-const auth = getAuth();
-async function authenticateWithFirebase() {
-  const customToken = process.env.FIREBASE_CUSTOM_TOKEN;
-  try {
-    const userCredential = await signInWithCustomToken(auth, customToken!);
-    console.log("🔥 authenticated with Firebase")
-    return userCredential.user;
-  } catch (error) {
-    const errorCode = error.code;
-    const errorMessage = error.message;
-    console.error("Error authenticating with Firebase: ", errorCode, errorMessage);
-    // tell discord channel that the bot is shutting down
-    discordClient.on("ready", () => {
-      const channel = discordClient.channels.cache.get(
-        "👁👥abrys-fam"
-      ) as TextChannel;
-      channel.send(
-        `I'm dying. @SleepRides plz help: ${errorCode} ${errorMessage}`
-      );
-      process.exit(1);
-    });
-  }
-}
+// const auth = getAuth();
+// async function authenticateWithFirebase() {
+//   const customToken = process.env.FIREBASE_CUSTOM_TOKEN;
+//   try {
+//     const userCredential = await signInWithCustomToken(auth, customToken!);
+//     console.log("🔥 authenticated with Firebase")
+//     return userCredential.user;
+//   } catch (error) {
+//     const errorCode = error.code;
+//     const errorMessage = error.message;
+//     console.error("Error authenticating with Firebase: ", errorCode, errorMessage);
+//     // tell discord channel that the bot is shutting down
+//     discordClient.on("ready", () => {
+//       const channel = discordClient.channels.cache.get(
+//         "👁👥abrys-fam"
+//       ) as TextChannel;
+//       channel.send(
+//         `I'm dying. @SleepRides plz help: ${errorCode} ${errorMessage}`
+//       );
+//       process.exit(1);
+//     });
+//   }
+// }
 
-authenticateWithFirebase();
+// authenticateWithFirebase();
 
 const ig = new IgApiClient();
 ig.state.generateDevice(process.env.IG_USERNAME!);
