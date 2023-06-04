@@ -50,7 +50,7 @@ const firestore = getFirestore(firebaseApp);
 //     // tell discord channel that the bot is shutting down
 //     discordClient.on("ready", () => {
 //       const channel = discordClient.channels.cache.get(
-//         "👁👥abrys-fam"
+//         "1102303082152460349"
 //       ) as TextChannel;
 //       channel.send(
 //         `I'm dying. @SleepRides plz help: ${errorCode} ${errorMessage}`
