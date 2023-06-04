@@ -37,12 +37,16 @@ const firestore = getFirestore(firebaseApp);
 //   const customToken = process.env.FIREBASE_CUSTOM_TOKEN;
 //   try {
 //     const userCredential = await signInWithCustomToken(auth, customToken!);
-//     console.log("🔥 authenticated with Firebase")
+//     console.log("🔥 authenticated with Firebase");
 //     return userCredential.user;
 //   } catch (error) {
 //     const errorCode = error.code;
 //     const errorMessage = error.message;
-//     console.error("Error authenticating with Firebase: ", errorCode, errorMessage);
+//     console.error(
+//       "Error authenticating with Firebase: ",
+//       errorCode,
+//       errorMessage
+//     );
 //     // tell discord channel that the bot is shutting down
 //     discordClient.on("ready", () => {
 //       const channel = discordClient.channels.cache.get(
@@ -86,10 +90,7 @@ async function promoteItOnAbrys(
     );
 
     await setDoc(
-      doc(
-        firestore,
-        `promote-it-on-abrys-fam-bot/${postHash}`
-      ),
+      doc(firestore, `promote-it-on-abrys-fam-bot/${postHash}`),
       {
         image_url: url,
         discord_user: discordUser,
@@ -108,7 +109,9 @@ async function promoteItOnAbrys(
   } catch (error) {
     const timestamp = new Date();
     botLog(
-      `${timestamp} Error promoting ${discordUser}'s ${getImageFileName(url)} to @abrys_fam: ${error}`
+      `${timestamp} Error promoting ${discordUser}'s ${getImageFileName(
+        url
+      )} to @abrys_fam: ${error}`
     );
 
     return {
@@ -143,7 +146,7 @@ async function postToInstagram(
   try {
     const res = await ig.publish.photo(photo);
     const igPostCode = res.media.code;
-    botLog(`Promoted to Instagram: ${igPostCode}`)
+    botLog(`Promoted to Instagram: ${igPostCode}`);
     return {
       didPromote: true,
       response:
@@ -171,11 +174,11 @@ function getImageFileName(url: string): string {
 
 function formatDate(date: Date) {
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hour = String(date.getHours()).padStart(2, '0');
-  const minute = String(date.getMinutes()).padStart(2, '0');
-  const second = String(date.getSeconds()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hour = String(date.getHours()).padStart(2, "0");
+  const minute = String(date.getMinutes()).padStart(2, "0");
+  const second = String(date.getSeconds()).padStart(2, "0");
   return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
 }
 
@@ -188,12 +191,11 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
   const channelName = (reaction.message.channel as TextChannel).name;
   const messageAuthor = reaction.message.author!.username;
   const messageDate = formatDate(reaction.message.createdAt);
-  const postHash = `${messageDate}_${messageAuthor}_${getImageFileName(attachment?.url ?? "")}`;
+  const postHash = `${messageDate}_${messageAuthor}_${getImageFileName(
+    attachment?.url ?? ""
+  )}`;
   const dbRecord = await getDoc(
-    doc(
-      firestore,
-      `promote-it-on-abrys-fam-bot/${postHash}`
-    )
+    doc(firestore, `promote-it-on-abrys-fam-bot/${postHash}`)
   );
 
   if (dbRecord.data()?.promoted_on_insta) {
@@ -201,7 +203,7 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
   }
 
   const isEligableToPromote =
-    channelName.includes("abrys-fam") &&
+    channelName.includes(process.env.DISCORD_CHANNEL_NAME!) &&
     APPROVED_USERS.includes(user.username!) &&
     reaction.count! > 0;
 
