@@ -1,13 +1,13 @@
 import { initializeApp } from "firebase/app";
 import { IgApiClient } from "instagram-private-api";
 import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
-import { getAuth, signInWithCustomToken } from "firebase/auth";
+// import { getAuth, signInWithCustomToken } from "firebase/auth";
 import { Client, GatewayIntentBits, TextChannel } from "discord.js";
 import sharp from "sharp";
 import * as dotenv from "dotenv";
 
 dotenv.config();
-const APPROVED_USERS = ["angular emoji", "luluwav", "SleepRides"];
+const APPROVED_USERS = ["angular emoji", "angular emoji#6001", "luluwav", "luluwav#5414", "sleeprides"];
 
 const discordToken = process.env.DISCORD_TOKEN;
 
@@ -187,6 +187,7 @@ discordClient.once("ready", async () => {
 });
 
 discordClient.on("messageReactionAdd", async (reaction, user) => {
+  console.log(`💁‍♂️ reactor: ${user}`);
   const attachment = reaction.message.attachments.first();
   const channelName = (reaction.message.channel as TextChannel).name;
   const messageAuthor = reaction.message.author!.username;
