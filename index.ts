@@ -7,7 +7,7 @@ import sharp from "sharp";
 import * as dotenv from "dotenv";
 
 dotenv.config();
-const APPROVED_USERS = ["angular emoji", "angular emoji#6001", "luluwav", "luluwav#5414", "sleeprides"];
+const APPROVED_USERS = ["angular emoji", "angularemoji", "angular emoji#6001", "luluwav", "lulu.wav", "luluwav#5414", "sleeprides"];
 
 const discordToken = process.env.DISCORD_TOKEN;
 
