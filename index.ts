@@ -203,12 +203,7 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
     return;
   }
 
-  const isEligableToPromote =
-    channelName.includes(process.env.DISCORD_CHANNEL_NAME!) &&
-    APPROVED_USERS.includes(user.username!) &&
-    reaction.count! > 0;
-
-  if (isEligableToPromote) {
+  if (isEligableToPromote(channelName, messageAuthor, reaction.count!)) {
     const reactors = await reaction.users.fetch();
     if (
       APPROVED_USERS.some((username) =>
@@ -236,3 +231,15 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
 });
 
 discordClient.login(discordToken);
+
+export function isEligableToPromote(
+  channelName: string,
+  discordUser: string,
+  reactionCount: number
+): boolean {
+  return (
+    channelName.includes(process.env.DISCORD_CHANNEL_NAME!) &&
+    APPROVED_USERS.includes(discordUser) &&
+    reactionCount > 0
+  );
+}
