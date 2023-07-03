@@ -23,6 +23,7 @@ const discordClient = new Client({
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
   authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  databaseURL: process.env.FIREABSE_DATABASE_URL,
   projectId: process.env.FIREBASE_PROJECT_ID,
   storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
@@ -70,7 +71,7 @@ function botLog(message: string) {
   console.log(`🤖 ${message}`);
 }
 
-async function promoteItOnAbrys(
+export async function promoteItOnAbrys(
   url: string,
   discordUser: string,
   postHash: string
@@ -203,12 +204,7 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
     return;
   }
 
-  const isEligableToPromote =
-    channelName.includes(process.env.DISCORD_CHANNEL_NAME!) &&
-    APPROVED_USERS.includes(user.username!) &&
-    reaction.count! > 0;
-
-  if (isEligableToPromote) {
+  if (isEligableToPromote(channelName, messageAuthor, reaction.count!)) {
     const reactors = await reaction.users.fetch();
     if (
       APPROVED_USERS.some((username) =>
@@ -236,3 +232,15 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
 });
 
 discordClient.login(discordToken);
+
+export function isEligableToPromote(
+  channelName: string,
+  discordUser: string,
+  reactionCount: number
+): boolean {
+  return (
+    channelName.includes(process.env.DISCORD_CHANNEL_NAME!) &&
+    APPROVED_USERS.includes(discordUser) &&
+    reactionCount > 0
+  );
+}
