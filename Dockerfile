@@ -8,6 +8,8 @@ COPY package.json .
 COPY pnpm-lock.yaml .
 RUN pnpm install
 
+# COPY .env ./
+
 COPY index.ts tsconfig.json ./
 
 CMD [ "pnpm", "start" ]
