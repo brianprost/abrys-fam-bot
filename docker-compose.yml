@@ -1,0 +1,29 @@
+version: "3.8"
+services:
+  db:
+    image: postgres
+    hostname: db
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: whatever
+      POSTGRES_DB: promote_it_on_abrys_fam
+    ports:
+      - 5432:5432
+    volumes:
+      - ./pg_data:/var/lib/postgresql/data
+  bot_local:
+    build:
+      context: .
+      dockerfile: ./Dockerfiles/bot_local.Dockerfile
+    environment:
+      - PG_DATABASE_CONNECTION_STRING=postgres://postgres:whatever@db:5432/promote_it_on_abrys_fam
+    depends_on:
+      - db
+  channel_status:
+    build:
+      context: .
+      dockerfile: ./Dockerfiles/channel_status.Dockerfile
+    environment:
+      - PG_DATABASE_CONNECTION_STRING=postgres://postgres:whatever@db:5432/promote_it_on_abrys_fam
+    depends_on:
+      - db
