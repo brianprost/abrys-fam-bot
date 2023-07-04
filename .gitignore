@@ -172,3 +172,6 @@ dist
 # venv
 .venv/
 migration/frost-children-firebase-adminsdk.json
+
+# postgres
+pg_data/
