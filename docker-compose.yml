@@ -11,9 +11,19 @@ services:
       - 5432:5432
     volumes:
       - ./pg_data:/var/lib/postgresql/data
-  bot:
+  bot_local:
     build:
       context: .
-      dockerfile: local.Dockerfile
+      dockerfile: ./Dockerfiles/bot_local.Dockerfile
+    environment:
+      - PG_DATABASE_CONNECTION_STRING=postgres://postgres:whatever@db:5432/promote_it_on_abrys_fam
+    depends_on:
+      - db
+  channel_status:
+    build:
+      context: .
+      dockerfile: ./Dockerfiles/channel_status.Dockerfile
+    environment:
+      - PG_DATABASE_CONNECTION_STRING=postgres://postgres:whatever@db:5432/promote_it_on_abrys_fam
     depends_on:
       - db
