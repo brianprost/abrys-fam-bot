@@ -1,4 +1,4 @@
-import { StackContext, Api, EventBus } from "sst/constructs";
+import { StackContext, Api, EventBus, Table } from "sst/constructs";
 
 export function API({ stack }: StackContext) {
   const bus = new EventBus(stack, "bus", {
@@ -7,17 +7,29 @@ export function API({ stack }: StackContext) {
     },
   });
 
+  const promotionTable = new Table(stack, "abrysPromotions", {
+    fields: {
+      userWhoPosted: "string",
+      messageId: "string",
+      attachmentUri: "string",
+      instagramUrl: "string",
+      datePosted: "string",
+    },
+    primaryIndex: { partitionKey: "userWhoPosted", sortKey: "messageId" },
+  });
+
   const api = new Api(stack, "api", {
     defaults: {
       function: {
-        bind: [bus],
+        bind: [bus, promotionTable],
       },
     },
     routes: {
       "GET /": "packages/functions/src/lambda.handler",
       "GET /todo": "packages/functions/src/todo.list",
       "POST /todo": "packages/functions/src/todo.create",
-      "GET /channel-state": "packages/functions/src/channel-state.handler"
+      "GET /channel-state": "packages/functions/src/channel-state.handler",
+      "GET /firebase-migration": "packages/functions/src/firebase-migration.handler",
     },
   });
 
