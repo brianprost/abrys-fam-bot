@@ -15,5 +15,7 @@
   },
   "ts-node": {
     "esm": true
-  }
+  },
+  "exclude": ["promote-it-on-abrys-fam-bot/packages"],
+  
 }
