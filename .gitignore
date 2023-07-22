@@ -178,3 +178,6 @@ pg_data/
 
 # sst
 .sst/
+
+# firebase
+firebase/

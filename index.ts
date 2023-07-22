@@ -5,6 +5,8 @@ import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
 import { Client, GatewayIntentBits, TextChannel } from "discord.js";
 import sharp from "sharp";
 import * as dotenv from "dotenv";
+import * as admin from "firebase-admin";
+import * as serviceAccount from "./firebase/fbAdminServiceKey.json" assert { type: "json" };
 
 dotenv.config();
 const APPROVED_USERS = ["angular emoji", "angularemoji", "angular emoji#6001", "luluwav", "lulu.wav", "luluwav#5414", "sleeprides"];
@@ -20,6 +22,27 @@ const discordClient = new Client({
   ],
 });
 
+// const firebaseAdminServiceAccount = {
+//   type: process.env.FIREBASE_ADMIN_TYPE!,
+//   project_id: process.env.FIREBASE_ADMIN_PROJECT_ID!,
+//   private_key_id: process.env.FIREBASE_ADMIN_PRIVATE_KEY_ID!,
+//   private_key: process.env.FIREBASE_ADMIN_PRIVATE_KEY!,
+//   client_email: process.env.FIREBASE_ADMIN_CLIENT_EMAIL!,
+//   client_id: process.env.FIREBASE_ADMIN_CLIENT_ID!,
+//   auth_uri: process.env.FIREBASE_ADMIN_AUTH_URI!,
+//   token_uri: process.env.FIREBASE_ADMIN_TOKEN_URI!,
+//   auth_provider_x509_cert_url: process.env.FIREBASE_ADMIN_AUTH_PROVIDER_X509_CERT_URL!,
+//   client_x509_cert_url: process.env.FIREBASE_ADMIN_CLIENT_X509_CERT_URL!,
+//   universe_domain: process.env.FIREBASE_ADMIN_UNIVERSE_DOMAIN!,
+// } as admin.ServiceAccount;
+
+// console.log(firebaseAdminServiceAccount)
+
+const firebaseApp = admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
+  databaseURL: "https://frost-children-default-rtdb.firebaseio.com"
+});
+
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
   authDomain: process.env.FIREBASE_AUTH_DOMAIN,
@@ -31,8 +54,8 @@ const firebaseConfig = {
   measurementId: process.env.FIREBASE_MEASUREMENT_ID,
 };
 
-const firebaseApp = initializeApp(firebaseConfig);
-const firestore = getFirestore(firebaseApp);
+// const firebaseApp = initializeApp(firebaseConfig);
+// const firestore = getFirestore(firebaseApp);
 // const auth = getAuth();
 // async function authenticateWithFirebase() {
 //   const customToken = process.env.FIREBASE_CUSTOM_TOKEN;
@@ -90,18 +113,27 @@ export async function promoteItOnAbrys(
       discordUser
     );
 
-    await setDoc(
-      doc(firestore, `promote-it-on-abrys-fam-bot/${postHash}`),
-      {
-        image_url: url,
-        discord_user: discordUser,
-        promoted_on_insta: didPromoteToAbrysFamInstagram.didPromote,
-        ig_post_code:
-          didPromoteToAbrysFamInstagram.didPromote &&
-          `https://www.instagram.com/p/${didPromoteToAbrysFamInstagram.igPostCode}/`,
-      },
-      { merge: true }
-    );
+    // await setDoc(
+    //   doc(firestore, `promote-it-on-abrys-fam-bot/${postHash}`),
+    //   {
+    //     image_url: url,
+    //     discord_user: discordUser,
+    //     promoted_on_insta: didPromoteToAbrysFamInstagram.didPromote,
+    //     ig_post_code:
+    //       didPromoteToAbrysFamInstagram.didPromote &&
+    //       `https://www.instagram.com/p/${didPromoteToAbrysFamInstagram.igPostCode}/`,
+    //   },
+    //   { merge: true }
+    // );
+    await firebaseApp.firestore().collection("promote-it-on-abrys-fam-bot").doc(postHash).set({
+      image_url: url,
+      discord_user: discordUser,
+      promoted_on_insta: didPromoteToAbrysFamInstagram.didPromote,
+      ig_post_code:
+        didPromoteToAbrysFamInstagram.didPromote &&
+        `https://www.instagram.com/p/${didPromoteToAbrysFamInstagram.igPostCode}/`,
+    }, { merge: true });
+
 
     return {
       didPromote: didPromoteToAbrysFamInstagram.didPromote,
@@ -188,7 +220,7 @@ discordClient.once("ready", async () => {
 });
 
 discordClient.on("messageReactionAdd", async (reaction, user) => {
-  console.log(`💁‍♂️ reactor: ${user}`);
+  console.log(`💁‍♂️ reactor: ${user.username}`);
   const attachment = reaction.message.attachments.first();
   const channelName = (reaction.message.channel as TextChannel).name;
   const messageAuthor = reaction.message.author!.username;
@@ -196,11 +228,13 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
   const postHash = `${messageDate}_${messageAuthor}_${getImageFileName(
     attachment?.url ?? ""
   )}`;
-  const dbRecord = await getDoc(
-    doc(firestore, `promote-it-on-abrys-fam-bot/${postHash}`)
-  );
+  // const dbRecord = await getDoc(
+  //   doc(firestore, `promote-it-on-abrys-fam-bot/${postHash}`)
+  // );
+  const dbRecord = await firebaseApp.firestore().collection("promote-it-on-abrys-fam-bot").doc(postHash).get();
 
   if (dbRecord.data()?.promoted_on_insta) {
+    botLog(`Skipping because ${postHash} was already promoted on Instagram`);
     return;
   }
 

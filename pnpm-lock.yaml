@@ -5,6 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
+  '@vercel/postgres':
+    specifier: ^0.4.0
+    version: 0.4.0
   discord.js:
     specifier: ^14.11.0
     version: 14.11.0
@@ -13,7 +16,7 @@ dependencies:
     version: 16.1.3
   drizzle-orm:
     specifier: ^0.27.0
-    version: 0.27.0(@types/pg@8.10.2)(pg@8.11.1)
+    version: 0.27.0(@types/pg@8.10.2)(@vercel/postgres@0.4.0)(pg@8.11.1)
   firebase:
     specifier: ^9.22.1
     version: 9.22.1
@@ -293,7 +296,7 @@ packages:
       '@vladfrangu/async_event_emitter': 2.2.2
       discord-api-types: 0.37.43
       tslib: 2.5.3
-      ws: 8.13.0
+      ws: 8.13.0(bufferutil@4.0.7)(utf-8-validate@6.0.3)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -1389,6 +1392,12 @@ packages:
     resolution: {integrity: sha512-GlM2AbzrErd/TmLL3E8hAHmb5Q7VhDJp35vIbyPVA5Rz55LZuRr8pwL3qrwwkVNo05gMX1J44gURKb4MHQZo7w==}
     dev: false
 
+  /@neondatabase/serverless@0.4.19:
+    resolution: {integrity: sha512-atzpP9uBLrWPokXZdVy2iNPmmxVx51HXhrEObDb4KXmsyGEkGhCcb6cs51LA/oyXwjJUeB4AreOoVgMcPAIv5g==}
+    dependencies:
+      '@types/pg': 8.6.6
+    dev: false
+
   /@nodelib/fs.scandir@2.1.5:
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
     engines: {node: '>= 8'}
@@ -1633,6 +1642,14 @@ packages:
       pg-protocol: 1.6.0
       pg-types: 4.0.1
 
+  /@types/pg@8.6.6:
+    resolution: {integrity: sha512-O2xNmXebtwVekJDD+02udOncjVcMZQuTEQEMpKJ0ZRf5E7/9JJX3izhKUcUifBkyKpljyUM6BTgy2trmviKlpw==}
+    dependencies:
+      '@types/node': 20.2.5
+      pg-protocol: 1.6.0
+      pg-types: 2.2.0
+    dev: false
+
   /@types/prettier@2.7.3:
     resolution: {integrity: sha512-+68kP9yzs4LMp7VNh8gdzMSPZFL44MLGqiHWvttYJe+6qnuVr4Ek9wSBQoveqY/r+LwjCcU29kNVkidwim+kYA==}
     dev: true
@@ -1762,6 +1779,16 @@ packages:
       '@typescript-eslint/types': 5.61.0
       eslint-visitor-keys: 3.4.1
     dev: true
+
+  /@vercel/postgres@0.4.0:
+    resolution: {integrity: sha512-GemRRKvLi90BC511WQzt5tfVLPNOQ9eNbbbaPquSgasm5ogfWLtjJSbNUD4jYEbs9IxbNovKqr0H0CAjJzOAyw==}
+    engines: {node: '>=14.6'}
+    dependencies:
+      '@neondatabase/serverless': 0.4.19
+      bufferutil: 4.0.7
+      utf-8-validate: 6.0.3
+      ws: 8.13.0(bufferutil@4.0.7)(utf-8-validate@6.0.3)
+    dev: false
 
   /@vladfrangu/async_event_emitter@2.2.2:
     resolution: {integrity: sha512-HIzRG7sy88UZjBJamssEczH5q7t5+axva19UbZLO6u0ySbYPrwzWiXBcC0WuHyhKKoeCyneH+FvYzKQq/zTtkQ==}
@@ -2061,6 +2088,14 @@ packages:
     dependencies:
       base64-js: 1.5.1
       ieee754: 1.2.1
+    dev: false
+
+  /bufferutil@4.0.7:
+    resolution: {integrity: sha512-kukuqc39WOHtdxtw4UScxF/WVnMFVSQVKhtx3AjZJzhd0RGZZldcrfSEbVsWWe6KNH253574cq5F+wpv0G9pJw==}
+    engines: {node: '>=6.14.2'}
+    requiresBuild: true
+    dependencies:
+      node-gyp-build: 4.6.0
     dev: false
 
   /builtins@5.0.1:
@@ -2494,7 +2529,7 @@ packages:
       lodash.snakecase: 4.1.1
       tslib: 2.5.3
       undici: 5.22.1
-      ws: 8.13.0
+      ws: 8.13.0(bufferutil@4.0.7)(utf-8-validate@6.0.3)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -2546,7 +2581,7 @@ packages:
       - supports-color
     dev: true
 
-  /drizzle-orm@0.27.0(@types/pg@8.10.2)(pg@8.11.1):
+  /drizzle-orm@0.27.0(@types/pg@8.10.2)(@vercel/postgres@0.4.0)(pg@8.11.1):
     resolution: {integrity: sha512-LGiJ0icB+wQwgbSCOvAjONY8Ec6G/EDzQQP5PmUaQYeI9OqgpVKHC2T1fFIbvk5dabWsbokJ5NOciVAxriStig==}
     peerDependencies:
       '@aws-sdk/client-rds-data': '>=3'
@@ -2609,6 +2644,7 @@ packages:
         optional: true
     dependencies:
       '@types/pg': 8.10.2
+      '@vercel/postgres': 0.4.0
       pg: 8.11.1
     dev: false
 
@@ -4726,6 +4762,11 @@ packages:
     engines: {node: '>= 6.13.0'}
     dev: false
 
+  /node-gyp-build@4.6.0:
+    resolution: {integrity: sha512-NTZVKn9IylLwUzaKjkas1e4u2DLNcV4rdYagA4PWdPwW87Bi7z+BznyKSRwS/761tV/lzCGXplWsiaMjLqP2zQ==}
+    hasBin: true
+    dev: false
+
   /nodemon@2.0.22:
     resolution: {integrity: sha512-B8YqaKMmyuCO7BowF1Z1/mkPqLk6cs/l63Ojtd6otKjMx47Dq1utxfRxcavH1I7VSaL8n5BUaoutadnsX3AAVQ==}
     engines: {node: '>=8.10.0'}
@@ -6281,6 +6322,14 @@ packages:
       tlds: 1.238.0
     dev: false
 
+  /utf-8-validate@6.0.3:
+    resolution: {integrity: sha512-uIuGf9TWQ/y+0Lp+KGZCMuJWc3N9BHA+l/UmHd/oUHwJJDeysyTRxNQVkbzsIWfGFbRe3OcgML/i0mvVRPOyDA==}
+    engines: {node: '>=6.14.2'}
+    requiresBuild: true
+    dependencies:
+      node-gyp-build: 4.6.0
+    dev: false
+
   /util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
     dev: false
@@ -6419,7 +6468,7 @@ packages:
   /wrappy@1.0.2:
     resolution: {integrity: sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==}
 
-  /ws@8.13.0:
+  /ws@8.13.0(bufferutil@4.0.7)(utf-8-validate@6.0.3):
     resolution: {integrity: sha512-x9vcZYTrFPC7aSIbj7sRCYo7L/Xb8Iy+pW0ng0wt2vCJv7M9HOMy0UoN3rr+IFC7hb7vXoqS+P9ktyLLLhO+LA==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
@@ -6430,6 +6479,9 @@ packages:
         optional: true
       utf-8-validate:
         optional: true
+    dependencies:
+      bufferutil: 4.0.7
+      utf-8-validate: 6.0.3
     dev: false
 
   /xmlcreate@2.0.4:
