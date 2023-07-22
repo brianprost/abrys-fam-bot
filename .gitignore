@@ -175,3 +175,6 @@ migration/frost-children-firebase-adminsdk.json
 
 # postgres
 pg_data/
+
+# sst
+.sst/
