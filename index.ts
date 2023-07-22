@@ -7,6 +7,7 @@ import sharp from "sharp";
 import * as dotenv from "dotenv";
 import * as admin from "firebase-admin";
 import * as serviceAccount from "./firebase/fbAdminServiceKey.json" assert { type: "json" };
+import pg from "pg";
 
 dotenv.config();
 const APPROVED_USERS = ["angular emoji", "angularemoji", "angular emoji#6001", "luluwav", "lulu.wav", "luluwav#5414", "sleeprides"];
@@ -38,21 +39,21 @@ const discordClient = new Client({
 
 // console.log(firebaseAdminServiceAccount)
 
-const firebaseApp = admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
-  databaseURL: "https://frost-children-default-rtdb.firebaseio.com"
-});
+// const firebaseApp = admin.initializeApp({
+//   credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
+//   databaseURL: "https://frost-children-default-rtdb.firebaseio.com"
+// });
 
-const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY,
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-  databaseURL: process.env.FIREABSE_DATABASE_URL,
-  projectId: process.env.FIREBASE_PROJECT_ID,
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.FIREBASE_APP_ID,
-  measurementId: process.env.FIREBASE_MEASUREMENT_ID,
-};
+// const firebaseConfig = {
+//   apiKey: process.env.FIREBASE_API_KEY,
+//   authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+//   databaseURL: process.env.FIREABSE_DATABASE_URL,
+//   projectId: process.env.FIREBASE_PROJECT_ID,
+//   storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+//   messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+//   appId: process.env.FIREBASE_APP_ID,
+//   measurementId: process.env.FIREBASE_MEASUREMENT_ID,
+// };
 
 // const firebaseApp = initializeApp(firebaseConfig);
 // const firestore = getFirestore(firebaseApp);
@@ -85,6 +86,14 @@ const firebaseConfig = {
 // }
 
 // authenticateWithFirebase();
+
+const { Pool } = pg;
+
+const pool = new Pool({
+  // connectionString: process.env.POSTGRES_URL + "?sslmode=require",
+  connectionString: process.env.PG_DATABASE_CONNECTION_STRING
+})
+
 
 const ig = new IgApiClient();
 ig.state.generateDevice(process.env.IG_USERNAME!);
@@ -125,14 +134,14 @@ export async function promoteItOnAbrys(
     //   },
     //   { merge: true }
     // );
-    await firebaseApp.firestore().collection("promote-it-on-abrys-fam-bot").doc(postHash).set({
-      image_url: url,
-      discord_user: discordUser,
-      promoted_on_insta: didPromoteToAbrysFamInstagram.didPromote,
-      ig_post_code:
-        didPromoteToAbrysFamInstagram.didPromote &&
-        `https://www.instagram.com/p/${didPromoteToAbrysFamInstagram.igPostCode}/`,
-    }, { merge: true });
+    // await firebaseApp.firestore().collection("promote-it-on-abrys-fam-bot").doc(postHash).set({
+    //   image_url: url,
+    //   discord_user: discordUser,
+    //   promoted_on_insta: didPromoteToAbrysFamInstagram.didPromote,
+    //   ig_post_code:
+    //     didPromoteToAbrysFamInstagram.didPromote &&
+    //     `https://www.instagram.com/p/${didPromoteToAbrysFamInstagram.igPostCode}/`,
+    // }, { merge: true });
 
 
     return {
@@ -231,12 +240,19 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
   // const dbRecord = await getDoc(
   //   doc(firestore, `promote-it-on-abrys-fam-bot/${postHash}`)
   // );
-  const dbRecord = await firebaseApp.firestore().collection("promote-it-on-abrys-fam-bot").doc(postHash).get();
+  // const dbRecord = await firebaseApp.firestore().collection("promote-it-on-abrys-fam-bot").doc(postHash).get();
+  // if (dbRecord.data()?.promoted_on_insta) {
+  //   botLog(`Skipping because ${postHash} was already promoted on Instagram`);
+  //   return;
+  // }
 
-  if (dbRecord.data()?.promoted_on_insta) {
+  // pg wway
+  const dbRecord = await pool.query(`SELECT * FROM promote_it_on_abrys_fam_bot WHERE post_hash = '${postHash}'`);
+  if (dbRecord.rows[0]?.promoted_on_insta) {
     botLog(`Skipping because ${postHash} was already promoted on Instagram`);
     return;
   }
+
 
   if (isEligableToPromote(channelName, messageAuthor, reaction.count!)) {
     const reactors = await reaction.users.fetch();
