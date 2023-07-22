@@ -1,11 +1,11 @@
-import { StackContext, Api, EventBus, Table } from "sst/constructs";
+import { StackContext, Api, EventBus, Table, Cron } from "sst/constructs";
 
-export function API({ stack }: StackContext) {
-  const bus = new EventBus(stack, "bus", {
-    defaults: {
-      retries: 10,
-    },
-  });
+export function PromoteItOnAbrysFamBot({ stack }: StackContext) {
+  // const bus = new EventBus(stack, "bus", {
+  //   defaults: {
+  //     retries: 10,
+  //   },
+  // });
 
   const promotionTable = new Table(stack, "abrysPromotions", {
     fields: {
@@ -21,20 +21,24 @@ export function API({ stack }: StackContext) {
   const api = new Api(stack, "api", {
     defaults: {
       function: {
-        bind: [bus, promotionTable],
+        bind: [promotionTable],
       },
     },
     routes: {
       "GET /": "packages/functions/src/lambda.handler",
-      "GET /todo": "packages/functions/src/todo.list",
-      "POST /todo": "packages/functions/src/todo.create",
-      "GET /channel-state": "packages/functions/src/channel-state.handler",
-      "GET /firebase-migration": "packages/functions/src/firebase-migration.handler",
+      // "GET /todo": "packages/functions/src/todo.list",
+      // "POST /todo": "packages/functions/src/todo.create",
+      // "GET /channel-state": "packages/functions/src/channel-state.handler",
+      // "GET /firebase-migration": "packages/functions/src/firebase-migration.handler",
     },
   });
 
-  bus.subscribe("todo.created", {
-    handler: "packages/functions/src/events/todo-created.handler",
+  // bus.subscribe("todo.created", {
+  //   handler: "packages/functions/src/events/todo-created.handler",
+  // });
+  new Cron(stack, "promoteIt", {
+    schedule: "rate(1 minute)",
+    job: "packages/functions/src/promote-it.handler",
   });
 
   stack.addOutputs({

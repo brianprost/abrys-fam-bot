@@ -155,7 +155,7 @@ export async function handler() {
         const channelState = await getChannelState();
         return {
             statusCode: 200,
-            body: JSON.stringify(await channelState)
+            body: JSON.stringify(channelState)
         }
     } catch (e) {
         return {
