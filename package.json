@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon --exec ts-node --esm index.ts",
+    "dev": "nodemon --exec ts-node --esm index.ts --dev",
+    "live": "nodemon --exec ts-node --esm index.ts",
     "start": "ts-node --esm index.ts",
     "stateThing": "nodemon --exec ts-node --esm channelStatusPg.ts"
   },

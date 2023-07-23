@@ -7,6 +7,15 @@ import { InferModel } from "drizzle-orm";
 import { boolean, pgTable, serial, text } from "drizzle-orm/pg-core";
 
 dotenv.config();
+
+const isDevMode = process.argv.includes("--dev");
+
+/////////////
+// CONFIGS //
+/////////////
+
+// DISCORD //
+
 const APPROVED_USERS = [
 	"angular emoji",
 	"angularemoji",
@@ -28,15 +37,20 @@ const discordClient = new Client({
 	],
 });
 
+// POSTGRES //
+
 const { Pool } = pg;
 
+const dbConnectionString = isDevMode
+	? process.env.PG_DATABASE_CONNECTION_STRING
+	: process.env.POSTGRES_URL + "?sslmode=require";
+
 const pool = new Pool({
-	connectionString: process.env.POSTGRES_URL + "?sslmode=require",
-	// connectionString: process.env.PG_DATABASE_CONNECTION_STRING
+	connectionString: dbConnectionString,
 });
 
-export type Promotion = InferModel<typeof promotions_demo>;
-export const promotions_demo = pgTable("promotions_demo", {
+export type Promotion = InferModel<typeof promotions>;
+export const promotions = pgTable("promotions", {
 	id: serial("id").primaryKey(),
 	discordUser: text("discord_user"),
 	messageId: text("message_id"),
@@ -45,35 +59,45 @@ export const promotions_demo = pgTable("promotions_demo", {
 	promotedOnInsta: boolean("promoted_on_insta"),
 });
 
+// INSTAGRAM //
+
 const ig = new IgApiClient();
 ig.state.generateDevice(process.env.IG_USERNAME!);
 await ig.account.login(process.env.IG_USERNAME!, process.env.IG_PASSWORD!);
-
-function botLog(message: string) {
-	console.log(`🤖 ${message}`);
-}
 
 export async function promoteItOnAbrys(
 	url: string,
 	discordUser: string,
 	messageId: string
 ): Promise<{ didPromote: boolean; response: string }> {
-	botLog(
+	console.log(
 		`\nAttempting to post image url: ${url} from Discord user ${discordUser}`
 	);
 
 	if (url.match(/\.(jpe?g|png|gif|bmp|webp|tiff?|heic|heif)$/i) == null) {
-		botLog(`${discordUser}'s image is not a valid image`);
+		console.log(`${discordUser}'s image is not a valid image`);
 		return { didPromote: false, response: "Not a valid image" };
 	}
 	try {
+		const response = await fetch(url);
+		let imageBuffer = await response.arrayBuffer();
+
+		const caption = `${discordUser} promoted it on @abrys_fam`;
+
 		const didPromoteToAbrysFamInstagram = await postToInstagram(
-			url,
-			discordUser
+			caption,
+			imageBuffer
 		);
+		console.log(didPromoteToAbrysFamInstagram.response);
+		// const didPromoteToAbrysFamInstagram = {
+		// 	// for dev purposes
+		// 	didPromote: true,
+		// 	response: "[DEV MODE] Promoted to https://www.instagram.com/p/COZ3ZJ5nZ7Q/",
+		// 	igPostCode: "COZ3ZJ5nZ7Q",
+		// };
 
 		await pool.query(
-			`INSERT INTO promotions_demo (discord_user, image_url, ig_post_code, message_id, promoted_on_insta) VALUES ('${discordUser}', '${url}', '${didPromoteToAbrysFamInstagram.igPostCode}', '${messageId}', '${didPromoteToAbrysFamInstagram.didPromote}')`
+			`INSERT INTO promotions (discord_user, image_url, ig_post_code, message_id, promoted_on_insta) VALUES ('${discordUser}', '${url}', '${didPromoteToAbrysFamInstagram.igPostCode}', '${messageId}', '${didPromoteToAbrysFamInstagram.didPromote}')`
 		);
 
 		return {
@@ -81,9 +105,9 @@ export async function promoteItOnAbrys(
 			response: didPromoteToAbrysFamInstagram.response,
 		};
 	} catch (error) {
-		const timestamp = new Date();
-		botLog(
-			`${timestamp} Error promoting ${discordUser}'s ${getImageFileName(
+		const timestamp = formatDate(new Date());
+		console.log(
+			`Error promoting ${discordUser}'s ${getImageFileName(
 				url
 			)} to @abrys_fam: ${error}`
 		);
@@ -96,31 +120,29 @@ export async function promoteItOnAbrys(
 }
 
 async function postToInstagram(
-	url: string,
-	discordUser: string
+	caption: string,
+	image: ArrayBuffer
 ): Promise<{ didPromote: boolean; response: string; igPostCode?: string }> {
-	const response = await fetch(url);
-	let imageBuffer = await response.arrayBuffer();
-
-	const metadata = await sharp(imageBuffer).metadata();
+	console.log("Promoting to Instagram...");
+	const metadata = await sharp(image).metadata();
 	if (metadata.width! < 320 || metadata.height! < 320) {
-		botLog(`${discordUser}'s image is too small`);
+		console.log(`Image is too small`);
 		return { didPromote: false, response: "Image is too small" };
 	}
 
-	const photoBuffer = await sharp(imageBuffer)
+	const photoBuffer = await sharp(image)
 		.resize({ width: 1080, withoutEnlargement: true })
 		.jpeg({ quality: 100 })
 		.toBuffer();
 	const photo = {
 		file: photoBuffer,
-		caption: `${discordUser} promoted it on @abrys_fam.`,
+		caption: caption,
 	};
 
 	try {
 		const res = await ig.publish.photo(photo);
 		const igPostCode = res.media.code;
-		botLog(`Promoted to Instagram: ${igPostCode}`);
+		console.log(`Promoted to Instagram: ${igPostCode}`);
 		return {
 			didPromote: true,
 			response:
@@ -130,7 +152,7 @@ async function postToInstagram(
 			igPostCode: igPostCode,
 		};
 	} catch (e) {
-		botLog(e);
+		console.log(e);
 		return { didPromote: false, response: e };
 	}
 }
@@ -157,28 +179,37 @@ function formatDate(date: Date) {
 }
 
 discordClient.once("ready", async () => {
-	botLog("Bot is ready!");
+	console.log("🤖 I'm connected to Discord!");
 });
 
 discordClient.on("messageReactionAdd", async (reaction, user) => {
-	console.log(`💁‍♂️ reactor: ${user.username}`);
 	const messageId = reaction.message.id;
 	const attachment = reaction.message.attachments.first();
 	const channelName = (reaction.message.channel as TextChannel).name;
 	const messageAuthor = reaction.message.author!.username;
+	console.log(
+		`🙀 Noticed a reaction from ${user.username} on one of ${messageAuthor}'s messages`
+	);
 
 	// TODO orm this
 	const dbRecord = await pool.query(
-		`SELECT * FROM promotions_demo WHERE message_id = '${messageId}'`
+		`SELECT * FROM promotions WHERE message_id = '${messageId}'`
 	);
 	if (dbRecord.rows[0]?.promoted_on_insta) {
-		botLog(
+		console.log(
 			`Skipping because ${attachment?.url} was already promoted on Instagram`
 		);
 		return;
+	} else {
+		console.log(
+			`${attachment?.url} was not previously promoted on Instagram, so we're going to try to promote it now.`
+		);
 	}
 
-	if (isEligableToPromote(channelName, messageAuthor, reaction.count!)) {
+	if (
+		channelName.includes(process.env.DISCORD_CHANNEL_NAME!) &&
+		reaction.count! > 0
+	) {
 		const reactors = await reaction.users.fetch();
 		if (
 			APPROVED_USERS.some((username) =>
@@ -197,10 +228,14 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
 				try {
 					reaction.message.reply(didPromoteItOnAbrysFam.response);
 				} catch (error) {
-					botLog(error);
+					console.log(error);
 					reaction.message.reply(`⛔️ Uh oh, ${error}`);
 				}
 			}
+		} else {
+			console.log(
+				`Not promoting because ${user.username} is not an approved reactor.`
+			);
 		}
 	}
 });

@@ -4,15 +4,21 @@ import commands from "./commands.json" assert { type: "json" };
 import { boolean, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 import { InferModel } from "drizzle-orm";
 
+const isDevMode = process.argv.includes("--dev");
+console.log(`isDevMode: ${isDevMode}`);
+
 config();
 
 export type Promotion = InferModel<typeof promotions>;
 
 const { Pool } = pg;
 
+const dbConnectionString = isDevMode
+	? process.env.PG_DATABASE_CONNECTION_STRING
+	: process.env.POSTGRES_URL + "?sslmode=require";
+
 const pool = new Pool({
-	connectionString: process.env.POSTGRES_URL + "?sslmode=require",
-	// connectionString: process.env.PG_DATABASE_CONNECTION_STRING,
+	connectionString: dbConnectionString,
 });
 
 export const promotions = pgTable("promotions", {
