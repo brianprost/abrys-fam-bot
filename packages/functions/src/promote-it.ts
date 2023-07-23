@@ -10,7 +10,6 @@ import { doc, getFirestore, setDoc } from "firebase/firestore";
 import { IgApiClient } from "instagram-private-api";
 import sharp from "sharp";
 // END TEMP
-const { Pool } = pg;
 
 type TResponseBody = {
 	newMessagesForPossiblePromotion?: number;
@@ -54,7 +53,6 @@ export async function getChannelState(): Promise<TResponseBody> {
 		messageId: text("message_id"),
 		imageUrl: text("image_url"),
 		igPostCode: text("ig_post_code"),
-		promotedOnInsta: boolean("promoted_on_insta"),
 	});
 
 	const db = drizzle(pool);
@@ -88,14 +86,14 @@ export async function getChannelState(): Promise<TResponseBody> {
 		});
 
 		// get a list of of any/all rows in DB that have a messageId
-		const previousPromotionsIds = (
+		const dbNonPromotedMsgIds = (
 			await db.select().from(promotions).where(isNull(promotions.igPostCode))
-		).map((promotion) => promotion.messageId);
-        console.log("previousPromotionsIds: ", previousPromotionsIds)
+		).map((p) => p.messageId);
+		console.log("dbNonPromotedMsgIds: ", dbNonPromotedMsgIds);
 
 		const newMessageIds = recentMessages
 			.map((message) => message.id)
-			.filter((id) => !previousPromotionsIds.includes(id));
+			.filter((id) => !dbNonPromotedMsgIds.includes(id));
 		const newMessages = recentMessages.filter((message) =>
 			newMessageIds.includes(message.id)
 		);
@@ -116,7 +114,6 @@ export async function getChannelState(): Promise<TResponseBody> {
 				const actualMessage = await channel.messages.fetch(id);
 				const userWhoPosted = actualMessage.author.username;
 				const attachmentUrl = actualMessage.attachments.first()?.url;
-				const messageDate = new Date(actualMessage.createdTimestamp);
 				const reactors = await Promise.all(
 					actualMessage.reactions.cache.map(async (reaction) => {
 						const reactorsTmp = await reaction.users.fetch();
@@ -128,13 +125,11 @@ export async function getChannelState(): Promise<TResponseBody> {
 				});
 				if (reactors.length > 0 && approvedReactors.length > 0) {
 					const messageId = actualMessage.id;
-					const note = `${userWhoPosted} promoted it on @abrys_fam. at ${messageDate}.`;
 					const newDbRecord = {
 						discordUser: userWhoPosted,
 						messageId: messageId,
 						imageUrl: attachmentUrl,
 						igPostCode: "lol just a test",
-						promotedOnInsta: true,
 					};
 					await db.insert(promotions).values(newDbRecord).returning();
 					// promoteItOnAbrys(attachmentUrl!, userWhoPosted, messageId);
