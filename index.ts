@@ -56,7 +56,6 @@ export const promotions = pgTable("promotions", {
 	messageId: text("message_id"),
 	imageUrl: text("image_url"),
 	igPostCode: text("ig_post_code"),
-	promotedOnInsta: boolean("promoted_on_insta"),
 });
 
 // INSTAGRAM //
@@ -97,7 +96,7 @@ export async function promoteItOnAbrys(
 		// };
 
 		await pool.query(
-			`INSERT INTO promotions (discord_user, image_url, ig_post_code, message_id, promoted_on_insta) VALUES ('${discordUser}', '${url}', '${didPromoteToAbrysFamInstagram.igPostCode}', '${messageId}', '${didPromoteToAbrysFamInstagram.didPromote}')`
+			`INSERT INTO promotions (discord_user, image_url, ig_post_code, message_id) VALUES ('${discordUser}', '${url}', '${didPromoteToAbrysFamInstagram.igPostCode}', '${messageId}')`
 		);
 
 		return {
