@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "module": "ES2022",
+    "module": "esnext",
     "esModuleInterop": true,
     "target": "ES2022",
     "moduleResolution": "Node",
@@ -11,7 +11,8 @@
     "strict": true,
     "noImplicitAny": true,
     "useUnknownInCatchVariables": false,
-    "inlineSourceMap": true
+    "inlineSourceMap": true,
+    "resolveJsonModule": true,
   },
   "ts-node": {
     "esm": true

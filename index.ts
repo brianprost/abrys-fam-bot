@@ -1,10 +1,10 @@
-import { initializeApp } from "firebase/app";
 import { IgApiClient } from "instagram-private-api";
-import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
-// import { getAuth, signInWithCustomToken } from "firebase/auth";
 import { Client, GatewayIntentBits, TextChannel } from "discord.js";
 import sharp from "sharp";
 import * as dotenv from "dotenv";
+import pg from "pg";
+import { InferModel } from "drizzle-orm";
+import { boolean, pgTable, serial, text } from "drizzle-orm/pg-core";
 
 dotenv.config();
 const APPROVED_USERS = [
@@ -28,48 +28,22 @@ const discordClient = new Client({
 	],
 });
 
-const firebaseConfig = {
-	apiKey: process.env.FIREBASE_API_KEY,
-	authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-	databaseURL: process.env.FIREABSE_DATABASE_URL,
-	projectId: process.env.FIREBASE_PROJECT_ID,
-	storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-	messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-	appId: process.env.FIREBASE_APP_ID,
-	measurementId: process.env.FIREBASE_MEASUREMENT_ID,
-};
+const { Pool } = pg;
 
-const firebaseApp = initializeApp(firebaseConfig);
-const firestore = getFirestore(firebaseApp);
-// const auth = getAuth();
-// async function authenticateWithFirebase() {
-//   const customToken = process.env.FIREBASE_CUSTOM_TOKEN;
-//   try {
-//     const userCredential = await signInWithCustomToken(auth, customToken!);
-//     console.log("🔥 authenticated with Firebase");
-//     return userCredential.user;
-//   } catch (error) {
-//     const errorCode = error.code;
-//     const errorMessage = error.message;
-//     console.error(
-//       "Error authenticating with Firebase: ",
-//       errorCode,
-//       errorMessage
-//     );
-//     // tell discord channel that the bot is shutting down
-//     discordClient.on("ready", () => {
-//       const channel = discordClient.channels.cache.get(
-//         "1102303082152460349"
-//       ) as TextChannel;
-//       channel.send(
-//         `I'm dying. @SleepRides plz help: ${errorCode} ${errorMessage}`
-//       );
-//       process.exit(1);
-//     });
-//   }
-// }
+const pool = new Pool({
+	connectionString: process.env.POSTGRES_URL + "?sslmode=require",
+	// connectionString: process.env.PG_DATABASE_CONNECTION_STRING
+});
 
-// authenticateWithFirebase();
+export type Promotion = InferModel<typeof promotions_demo>;
+export const promotions_demo = pgTable("promotions_demo", {
+	id: serial("id").primaryKey(),
+	discordUser: text("discord_user"),
+	messageId: text("message_id"),
+	imageUrl: text("image_url"),
+	igPostCode: text("ig_post_code"),
+	promotedOnInsta: boolean("promoted_on_insta"),
+});
 
 const ig = new IgApiClient();
 ig.state.generateDevice(process.env.IG_USERNAME!);
@@ -82,7 +56,7 @@ function botLog(message: string) {
 export async function promoteItOnAbrys(
 	url: string,
 	discordUser: string,
-	postHash: string
+	messageId: string
 ): Promise<{ didPromote: boolean; response: string }> {
 	botLog(
 		`\nAttempting to post image url: ${url} from Discord user ${discordUser}`
@@ -98,17 +72,8 @@ export async function promoteItOnAbrys(
 			discordUser
 		);
 
-		await setDoc(
-			doc(firestore, `promote-it-on-abrys-fam-bot/${postHash}`),
-			{
-				image_url: url,
-				discord_user: discordUser,
-				promoted_on_insta: didPromoteToAbrysFamInstagram.didPromote,
-				ig_post_code:
-					didPromoteToAbrysFamInstagram.didPromote &&
-					`https://www.instagram.com/p/${didPromoteToAbrysFamInstagram.igPostCode}/`,
-			},
-			{ merge: true }
+		await pool.query(
+			`INSERT INTO promotions_demo (discord_user, image_url, ig_post_code, message_id, promoted_on_insta) VALUES ('${discordUser}', '${url}', '${didPromoteToAbrysFamInstagram.igPostCode}', '${messageId}', '${didPromoteToAbrysFamInstagram.didPromote}')`
 		);
 
 		return {
@@ -196,19 +161,20 @@ discordClient.once("ready", async () => {
 });
 
 discordClient.on("messageReactionAdd", async (reaction, user) => {
-	console.log(`💁‍♂️ reactor: ${user}`);
+	console.log(`💁‍♂️ reactor: ${user.username}`);
+	const messageId = reaction.message.id;
 	const attachment = reaction.message.attachments.first();
 	const channelName = (reaction.message.channel as TextChannel).name;
 	const messageAuthor = reaction.message.author!.username;
-	const messageDate = formatDate(reaction.message.createdAt);
-	const postHash = `${messageDate}_${messageAuthor}_${getImageFileName(
-		attachment?.url ?? ""
-	)}`;
-	const dbRecord = await getDoc(
-		doc(firestore, `promote-it-on-abrys-fam-bot/${postHash}`)
-	);
 
-	if (dbRecord.data()?.promoted_on_insta) {
+	// TODO orm this
+	const dbRecord = await pool.query(
+		`SELECT * FROM promotions_demo WHERE message_id = '${messageId}'`
+	);
+	if (dbRecord.rows[0]?.promoted_on_insta) {
+		botLog(
+			`Skipping because ${attachment?.url} was already promoted on Instagram`
+		);
 		return;
 	}
 
@@ -226,7 +192,7 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
 				const didPromoteItOnAbrysFam = await promoteItOnAbrys(
 					attachment.url,
 					messageAuthor,
-					postHash
+					messageId
 				);
 				try {
 					reaction.message.reply(didPromoteItOnAbrysFam.response);
