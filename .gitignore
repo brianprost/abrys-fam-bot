@@ -178,3 +178,5 @@ pg_data/
 
 # sst
 .sst/
+
+commands.json
