@@ -33,7 +33,7 @@ await pool
 	.query(
 		'CREATE TABLE IF NOT EXISTS "public"."promotions" ("id" SERIAL PRIMARY KEY, "discord_user" TEXT, "image_url" TEXT, "ig_post_code" TEXT, "message_id" TEXT, "promoted_on_insta" BOOLEAN);'
 	)
-	.then((res) => {
+	.then((res: any) => {
 		console.log(res);
 	});
 

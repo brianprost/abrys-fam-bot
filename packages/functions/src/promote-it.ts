@@ -4,12 +4,15 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { pgTable, serial, text, timestamp, boolean } from "drizzle-orm/pg-core";
 import { InferModel, isNull } from "drizzle-orm";
 import pg from "pg";
+import { get } from '@vercel/edge-config';
 // TEMP
 import { initializeApp } from "firebase/app";
 import { doc, getFirestore, setDoc } from "firebase/firestore";
 import { IgApiClient } from "instagram-private-api";
 import sharp from "sharp";
 // END TEMP
+
+const MOST_RECENT_MESSAGE_ID = "1114617284401565716";
 
 type TResponseBody = {
 	newMessagesForPossiblePromotion?: number;
@@ -75,6 +78,10 @@ export async function getChannelState(): Promise<TResponseBody> {
 		const channel: TextChannel = client.channels.cache.get(
 			channelId!
 		) as TextChannel;
+
+		// // get the most recent message id and compare it to what we have to see if we need to fetch any prior messages or not
+		// const doWeNeedToFetchMore =
+		// 	MOST_RECENT_MESSAGE_ID !== channel.lastMessageId;
 
 		const allMessages = await channel!.messages.fetch({ limit: 100 });
 
