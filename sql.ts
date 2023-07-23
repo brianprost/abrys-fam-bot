@@ -27,7 +27,6 @@ export const promotions = pgTable("promotions", {
 	imageUrl: text("image_url"),
 	igPostCode: text("ig_post_code"),
 	messageId: text("message_id"),
-	promotedOnInsta: boolean("promoted_on_insta"),
 });
 
 await pool
