@@ -1,17 +1,19 @@
 import { Client, GatewayIntentBits, TextChannel } from "discord.js";
 import { config } from "dotenv";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 import { InferModel, isNull } from "drizzle-orm";
 import pg from "pg";
 // TEMP
-import { initializeApp } from "firebase/app";
-import { doc, getFirestore, setDoc } from "firebase/firestore";
-import { IgApiClient } from "instagram-private-api";
+// import { initializeApp } from "firebase/app";
+// import { doc, getFirestore, setDoc } from "firebase/firestore";
+// import { IgApiClient } from "instagram-private-api";
 import sharp from "sharp";
 // END TEMP
-const { Pool } = pg;
+
 config();
+
+const isDevMode = process.argv.includes("--dev");
 
 const APPROVED_USERS = [
 	"angular emoji",
@@ -23,20 +25,24 @@ const APPROVED_USERS = [
 	"sleeprides",
 ];
 
-export type Promotion = InferModel<typeof promotions>;
+const { Pool } = pg;
+
+const dbConnectionString = isDevMode
+	? process.env.PG_DATABASE_CONNECTION_STRING
+	: process.env.POSTGRES_URL + "?sslmode=require";
 
 const pool = new Pool({
-	connectionString: process.env.PG_DATABASE_CONNECTION_STRING,
+	connectionString: dbConnectionString,
 });
 
+export type Promotion = InferModel<typeof promotions>;
 export const promotions = pgTable("promotions", {
 	id: serial("id").primaryKey(),
-	userWhoPosted: text("user_who_posted").notNull(),
-	messageId: text("message_id").notNull(),
-	attachmentUrl: text("attachment_url"),
-	instagramUrl: text("instagram_url"),
-	notes: text("notes"),
-	createdAt: timestamp("created_at").defaultNow().notNull(),
+	discordUser: text("discord_user"),
+	messageId: text("message_id"),
+	imageUrl: text("image_url"),
+	igPostCode: text("ig_post_code"),
+	promotedOnInsta: boolean("promoted_on_insta"),
 });
 
 const db = drizzle(pool);

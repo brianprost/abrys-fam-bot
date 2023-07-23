@@ -6,13 +6,14 @@ import pg from "pg";
 import { InferModel } from "drizzle-orm";
 import { boolean, pgTable, serial, text } from "drizzle-orm/pg-core";
 
-dotenv.config();
-
-const isDevMode = process.argv.includes("--dev");
 
 /////////////
 // CONFIGS //
 /////////////
+
+dotenv.config();
+
+const isDevMode = process.argv.includes("--dev");
 
 // DISCORD //
 
