@@ -12,7 +12,8 @@
     "console": "sst console",
     "typecheck": "tsc --noEmit",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev-reload": "nodemon --exec ts-node --esm index.ts",
+    "dev_reload": "nodemon --exec ts-node --esm index.ts --dev",
+    "live": "nodemon --exec ts-node --esm index.ts",
     "start": "ts-node --esm index.ts",
     "stateThing": "nodemon --exec ts-node --esm channelStatusPg.ts"
   },
