@@ -12,10 +12,7 @@ export type Promotion = InferModel<typeof promotions_demo>;
 const { Pool } = pg;
 
 const pool = new Pool({
-	connectionString: process.env.POSTGRES_URL,
-	ssl: {
-		rejectUnauthorized: false,
-	}
+	connectionString: process.env.PG_DATABASE_CONNECTION_STRING
 });
 
 export const promotions_demo = pgTable("promotions_demo", {
@@ -33,8 +30,8 @@ await pool.query('CREATE TABLE IF NOT EXISTS "public"."promotions_demo" ("id" se
 	console.log(res);
 });
 
-commands.forEach(async (command) => {
-	// console.log(command)
-    await pool.query(command);
-    // console.log(command);
-});
+// commands.forEach(async (command) => {
+// 	// console.log(command)
+//     await pool.query(command);
+//     // console.log(command);
+// });
