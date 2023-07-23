@@ -29,7 +29,7 @@ const { Pool } = pg;
 
 const pool = new Pool({
   // connectionString: process.env.POSTGRES_URL + "?sslmode=require",
-  connectionString: process.env.PG_DATABASE_CONNECTION_STRING
+  connectionString: process.env.POSTGRES_URL + "?sslmode=require",
 })
 
 export type Promotion = InferModel<typeof promotions_demo>;
@@ -69,28 +69,6 @@ export async function promoteItOnAbrys(
       discordUser
     );
 
-    // await setDoc(
-    //   doc(firestore, `promote-it-on-abrys-fam-bot/${postHash}`),
-    //   {
-    //     image_url: url,
-    //     discord_user: discordUser,
-    //     promoted_on_insta: didPromoteToAbrysFamInstagram.didPromote,
-    //     ig_post_code:
-    //       didPromoteToAbrysFamInstagram.didPromote &&
-    //       `https://www.instagram.com/p/${didPromoteToAbrysFamInstagram.igPostCode}/`,
-    //   },
-    //   { merge: true }
-    // );
-    // await firebaseApp.firestore().collection("promote-it-on-abrys-fam-bot").doc(postHash).set({
-    //   image_url: url,
-    //   discord_user: discordUser,
-    //   promoted_on_insta: didPromoteToAbrysFamInstagram.didPromote,
-    //   ig_post_code:
-    //     didPromoteToAbrysFamInstagram.didPromote &&
-    //     `https://www.instagram.com/p/${didPromoteToAbrysFamInstagram.igPostCode}/`,
-    // }, { merge: true });
-
-    // pg way
     await pool.query(`INSERT INTO promotions_demo (discord_user, image_url, ig_post_code, message_id, promoted_on_insta) VALUES ('${discordUser}', '${url}', '${didPromoteToAbrysFamInstagram.igPostCode}', '', '${didPromoteToAbrysFamInstagram.didPromote}')`);
 
 
@@ -190,18 +168,7 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
   const channelName = (reaction.message.channel as TextChannel).name;
   const messageAuthor = reaction.message.author!.username;
   const messageDate = formatDate(reaction.message.createdAt);
-  // const postHash = `${messageDate}_${messageAuthor}_${getImageFileName(
-  //   attachment?.url ?? ""
-  // )}`;
   const imageUrl = attachment?.url ?? "";
-  // const dbRecord = await getDoc(
-  //   doc(firestore, `promote-it-on-abrys-fam-bot/${postHash}`)
-  // );
-  // const dbRecord = await firebaseApp.firestore().collection("promote-it-on-abrys-fam-bot").doc(postHash).get();
-  // if (dbRecord.data()?.promoted_on_insta) {
-  //   botLog(`Skipping because ${postHash} was already promoted on Instagram`);
-  //   return;
-  // }
 
   // pg wway
   const dbRecord = await pool.query(`SELECT * FROM promotions_demo WHERE image_url = '${imageUrl}'`);
