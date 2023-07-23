@@ -2,17 +2,8 @@ import { Client, GatewayIntentBits, TextChannel } from "discord.js";
 import { config } from "dotenv";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { pgTable, serial, text, timestamp, boolean } from "drizzle-orm/pg-core";
-import { InferModel, isNull } from "drizzle-orm";
+import { InferModel, isNull, eq, isNotNull } from "drizzle-orm";
 import pg from "pg";
-import { get } from '@vercel/edge-config';
-// TEMP
-import { initializeApp } from "firebase/app";
-import { doc, getFirestore, setDoc } from "firebase/firestore";
-import { IgApiClient } from "instagram-private-api";
-import sharp from "sharp";
-// END TEMP
-
-const MOST_RECENT_MESSAGE_ID = "1114617284401565716";
 
 type TResponseBody = {
 	newMessagesForPossiblePromotion?: number;
@@ -58,7 +49,20 @@ export async function getChannelState(): Promise<TResponseBody> {
 		igPostCode: text("ig_post_code"),
 	});
 
+	type Config = InferModel<typeof configTable>;
+	const configTable = pgTable("config", {
+		id: serial("id").primaryKey(),
+		key: text("key"),
+		value: text("value"),
+	});
+
 	const db = drizzle(pool);
+
+	const knownLastMsgIdFromDb = await db
+		.select()
+		.from(configTable)
+		.where(eq(configTable.key, "most_recent_message_id"));
+	const knownLastMsgId = knownLastMsgIdFromDb[0].value;
 
 	const client = new Client({
 		intents: [GatewayIntentBits.Guilds, GatewayIntentBits.MessageContent],
@@ -79,35 +83,25 @@ export async function getChannelState(): Promise<TResponseBody> {
 			channelId!
 		) as TextChannel;
 
-		// // get the most recent message id and compare it to what we have to see if we need to fetch any prior messages or not
-		// const doWeNeedToFetchMore =
-		// 	MOST_RECENT_MESSAGE_ID !== channel.lastMessageId;
+		// const doWeNeedToFetchMore = knownLastMsgId !== channel.lastMessageId;
 
-		const allMessages = await channel!.messages.fetch({ limit: 100 });
+		// if (!doWeNeedToFetchMore) {
+		// 	console.log("👀 No new messages to check.");
+		// 	return;
+		// }
 
-		const recentMessages = allMessages.filter((message) => {
-			const inPrevious360Days =
-				new Date(message.createdTimestamp) >
-				new Date(new Date().setDate(new Date().getDate() - 500));
-			return inPrevious360Days && message.attachments.size > 0;
-		});
-
-		// get a list of of any/all rows in DB that have a messageId
-		const dbNonPromotedMsgIds = (
-			await db.select().from(promotions).where(isNull(promotions.igPostCode))
+		const previouslyPromoted = (
+			await db.select().from(promotions).where(isNotNull(promotions.igPostCode))
 		).map((p) => p.messageId);
-		console.log("dbNonPromotedMsgIds: ", dbNonPromotedMsgIds);
 
-		const newMessageIds = recentMessages
-			.map((message) => message.id)
-			.filter((id) => !dbNonPromotedMsgIds.includes(id));
-		const newMessages = recentMessages.filter((message) =>
-			newMessageIds.includes(message.id)
-		);
+		const allChannelMessages = await channel!.messages.fetch({ limit: 100 });
+		const newMessages = allChannelMessages.filter((message) => message.id);
 		const newMessagesForPossiblePromotion = newMessages.filter((message) => {
-			const hasAttachment = message.attachments.size > 0;
-			const hasReaction = message.reactions.cache.size > 0;
-			return hasAttachment && hasReaction;
+			return (
+				message.attachments.size > 0 &&
+				message.reactions.cache.size > 0 &&
+				!previouslyPromoted.includes(message.id)
+			);
 		});
 
 		console.log(
@@ -151,12 +145,13 @@ export async function getChannelState(): Promise<TResponseBody> {
 			.where(isNull(promotions.igPostCode));
 		console.log(nonPromotedPromotions.length, " submissions not approved yet.");
 
-		// responseBody.newMessagesForPossiblePromotion = Number(
-		// 	newMessagesForPossiblePromotion.size
-		// );
-		// responseBody.nonPromotedPromotions = Number(nonPromotedPromotions.length);
+		// // update the most_recent_message_id in the db
+		// await db
+		// 	.update(configTable)
+		// 	.set({ value: channel.lastMessageId })
+		// 	.where(eq(configTable.key, "most_recent_message_id"));
+		// console.log(`Updated last message id to ${channel.lastMessageId}`);
 	});
-
 	return responseBody!;
 }
 
