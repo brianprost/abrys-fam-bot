@@ -183,3 +183,5 @@ pg_data/
 
 # firebase
 firebase/
+
+commands.json
