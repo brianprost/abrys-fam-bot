@@ -1,15 +1,10 @@
-import { initializeApp } from "firebase/app";
 import { IgApiClient } from "instagram-private-api";
-import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
-// import { getAuth, signInWithCustomToken } from "firebase/auth";
 import { Client, GatewayIntentBits, TextChannel } from "discord.js";
 import sharp from "sharp";
 import * as dotenv from "dotenv";
-import * as admin from "firebase-admin";
-import * as serviceAccount from "./firebase/fbAdminServiceKey.json" assert { type: "json" };
 import pg from "pg";
 import { InferModel } from "drizzle-orm";
-import { pgTable, serial, text } from "drizzle-orm/pg-core";
+import { boolean, pgTable, serial, text } from "drizzle-orm/pg-core";
 
 dotenv.config();
 const APPROVED_USERS = ["angular emoji", "angularemoji", "angular emoji#6001", "luluwav", "lulu.wav", "luluwav#5414", "sleeprides"];
@@ -29,17 +24,17 @@ const { Pool } = pg;
 
 const pool = new Pool({
   // connectionString: process.env.POSTGRES_URL + "?sslmode=require",
-  connectionString: process.env.POSTGRES_URL + "?sslmode=require",
+  connectionString: process.env.PG_DATABASE_CONNECTION_STRING
 })
 
 export type Promotion = InferModel<typeof promotions_demo>;
 export const promotions_demo = pgTable("promotions_demo", {
 	id: serial("id").primaryKey(),
 	discordUser: text("discord_user"),
+	messageId: text("message_id"),
 	imageUrl: text("image_url"),
 	igPostCode: text("ig_post_code"),
-	messageId: text("message_id"),
-	promotedOnInsta: text("promoted_on_insta"),
+  promotedOnInsta: boolean("promoted_on_insta"),
 });
 
 const ig = new IgApiClient();
@@ -53,7 +48,8 @@ function botLog(message: string) {
 export async function promoteItOnAbrys(
   url: string,
   discordUser: string,
-  imageUrl: string
+  imageUrl: string,
+  messageId: string
 ): Promise<{ didPromote: boolean; response: string }> {
   botLog(
     `\nAttempting to post image url: ${url} from Discord user ${discordUser}`
@@ -69,7 +65,7 @@ export async function promoteItOnAbrys(
       discordUser
     );
 
-    await pool.query(`INSERT INTO promotions_demo (discord_user, image_url, ig_post_code, message_id, promoted_on_insta) VALUES ('${discordUser}', '${url}', '${didPromoteToAbrysFamInstagram.igPostCode}', '', '${didPromoteToAbrysFamInstagram.didPromote}')`);
+    await pool.query(`INSERT INTO promotions_demo (discord_user, image_url, ig_post_code, message_id, promoted_on_insta) VALUES ('${discordUser}', '${url}', '${didPromoteToAbrysFamInstagram.igPostCode}', '${messageId}', '${didPromoteToAbrysFamInstagram.didPromote}')`);
 
 
     return {
@@ -96,11 +92,11 @@ async function postToInstagram(
   discordUser: string
 ): Promise<{ didPromote: boolean; response: string; igPostCode?: string }> {
   // temp for prototyping
-  return {
-    didPromote: true,
-    response: "Promoted to https://www.instagram.com/p/COZ2Z9YhZ6E/",
-    igPostCode: "COZ2Z9YhZ6E",
-  };
+  // return {
+  //   didPromote: true,
+  //   response: "Promoted to https://www.instagram.com/p/COZ2Z9YhZ6E/",
+  //   igPostCode: "COZ2Z9YhZ6E",
+  // };
   const response = await fetch(url);
   let imageBuffer = await response.arrayBuffer();
 
@@ -169,9 +165,10 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
   const messageAuthor = reaction.message.author!.username;
   const messageDate = formatDate(reaction.message.createdAt);
   const imageUrl = attachment?.url ?? "";
+  const messageId = reaction.message.id;
 
   // pg wway
-  const dbRecord = await pool.query(`SELECT * FROM promotions_demo WHERE image_url = '${imageUrl}'`);
+  const dbRecord = await pool.query(`SELECT * FROM promotions_demo WHERE message_id = '${messageId}'`);
   if (dbRecord.rows[0]?.promoted_on_insta) {
     botLog(`Skipping because ${imageUrl} was already promoted on Instagram`);
     return;
@@ -192,7 +189,8 @@ discordClient.on("messageReactionAdd", async (reaction, user) => {
         const didPromoteItOnAbrysFam = await promoteItOnAbrys(
           attachment.url,
           messageAuthor,
-          imageUrl
+          imageUrl,
+          messageId
         );
         try {
           reaction.message.reply(didPromoteItOnAbrysFam.response);
