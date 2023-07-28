@@ -31,7 +31,7 @@ const pool = new Pool({
 });
 
 type Promotion = InferModel<typeof promotions>;
-const promotions = pgTable("promotions_abrystests", {
+const promotions = pgTable("promotions", {
 	messageId: text("message_id").primaryKey(),
 	discordUser: text("discord_user"),
 	imageUrl: text("image_url"),
@@ -49,11 +49,6 @@ export async function handler() {
 			client.login(process.env.DISCORD_TOKEN);
 			client.once("ready", async () => {
 				try {
-					const channel: TextChannel = client.channels.cache.get(
-						process.env.DISCORD_CHANNEL_ID!
-					) as TextChannel;
-					const timestamp = new Date().toISOString();
-					await channel.send(`🤖 I'm awake! It's ${timestamp}`);
 					await getNewSubmissions(client);
 					const approvedSubmissions = await getApprovedSubmissions(client);
 					if (approvedSubmissions.length < 1) {
@@ -69,6 +64,9 @@ export async function handler() {
 						process.env.IG_PASSWORD!
 					);
 
+					const channel: TextChannel = client.channels.cache.get(
+						process.env.DISCORD_CHANNEL_ID!
+					) as TextChannel;
 					const promises = approvedSubmissions.map(async (submission) => {
 						const { messageId, discordUser, imageUrl } = submission;
 
@@ -80,7 +78,7 @@ export async function handler() {
 							caption,
 							imageBuffer,
 							igClient,
-							true
+							false
 						);
 						console.log("from Instagram: ", response);
 
@@ -166,7 +164,7 @@ export async function getNewSubmissions(client: Client) {
 	const channel: TextChannel = client.channels.cache.get(
 		process.env.DISCORD_CHANNEL_ID!
 	) as TextChannel;
-	const allChannelMessages = await fetchMore(channel, 10);
+	const allChannelMessages = await fetchMore(channel, 20);
 
 	const submissionMessages = allChannelMessages.filter((message: any) => {
 		return message.attachments.size > 0 && message.reactions.cache.size > 0;

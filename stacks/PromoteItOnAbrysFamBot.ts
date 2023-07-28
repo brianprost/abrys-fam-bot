@@ -1,6 +1,4 @@
 import { StackContext, Cron } from "sst/constructs";
-// import { config } from "dotenv";
-// config();
 
 export function PromoteItOnAbrysFamBot({ stack }: StackContext) {
 	const promoteItCron = new Cron(stack, "Cron-Promote-It-On-Abrys-Fam", {
