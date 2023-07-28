@@ -5,7 +5,6 @@ import { InferModel, isNull, eq } from "drizzle-orm";
 import pg from "pg";
 import sharp from "sharp";
 import { IgApiClient } from "instagram-private-api";
-import { APIGatewayProxyEventV2 } from "aws-lambda";
 import { config } from "dotenv";
 
 config();
@@ -32,7 +31,7 @@ const pool = new Pool({
 });
 
 type Promotion = InferModel<typeof promotions>;
-const promotions = pgTable("promotions", {
+const promotions = pgTable("promotions_abrystests", {
 	messageId: text("message_id").primaryKey(),
 	discordUser: text("discord_user"),
 	imageUrl: text("image_url"),
@@ -53,12 +52,12 @@ export async function handler() {
 					const channel: TextChannel = client.channels.cache.get(
 						process.env.DISCORD_CHANNEL_ID!
 					) as TextChannel;
-					await channel.send(`🤖 I'm awake!`);
+					const timestamp = new Date().toISOString();
+					await channel.send(`🤖 I'm awake! It's ${timestamp}`);
 					await getNewSubmissions(client);
 					const approvedSubmissions = await getApprovedSubmissions(client);
 					if (approvedSubmissions.length < 1) {
 						console.log("No submissions to promote.");
-						await channel.send(`🤖 Please start promoting it on @abrys_fam.`);
 						resolve();
 						return;
 					}
@@ -81,7 +80,7 @@ export async function handler() {
 							caption,
 							imageBuffer,
 							igClient,
-							false
+							true
 						);
 						console.log("from Instagram: ", response);
 
@@ -167,7 +166,7 @@ export async function getNewSubmissions(client: Client) {
 	const channel: TextChannel = client.channels.cache.get(
 		process.env.DISCORD_CHANNEL_ID!
 	) as TextChannel;
-	const allChannelMessages = await fetchMore(channel, 100);
+	const allChannelMessages = await fetchMore(channel, 10);
 
 	const submissionMessages = allChannelMessages.filter((message: any) => {
 		return message.attachments.size > 0 && message.reactions.cache.size > 0;

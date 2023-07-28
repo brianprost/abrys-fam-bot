@@ -1,5 +1,5 @@
 import { SSTConfig } from "sst";
-import { PromoteItOnAbrysFamBot } from "./stacks/MyStack";
+import { PromoteItOnAbrysFamBot } from "./stacks/PromoteItOnAbrysFamBot";
 
 export default {
 	config(_input) {
