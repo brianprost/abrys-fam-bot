@@ -1,47 +1,39 @@
-import { StackContext, Api, EventBus, Table, Cron } from "sst/constructs";
+import { StackContext, Api, Cron } from "sst/constructs";
+import { config } from "dotenv";
 
 export function PromoteItOnAbrysFamBot({ stack }: StackContext) {
-  // const bus = new EventBus(stack, "bus", {
-  //   defaults: {
-  //     retries: 10,
-  //   },
-  // });
+	const api = new Api(stack, "api", {
+		defaults: {
+			function: {
+				bind: [],
+        environment: {
+          DISCORD_TOKEN: process.env.DISCORD_TOKEN!,
+          DISCORD_CHANNEL_NAME: process.env.DISCORD_CHANNEL_NAME!,
+          DISCORD_CHANNEL_ID: process.env.DISCORD_CHANNEL_ID!,
+          DISCORD_GUILD_ID: process.env.DISCORD_GUILD_ID!,
+          DISCORD_CLIENT_ID: process.env.DISCORD_CLIENT_ID!,
+          IG_USERNAME: process.env.IG_USERNAME!,
+          IG_PASSWORD: process.env.IG_PASSWORD!,
+          POSTGRES_URL: process.env.POSTGRES_URL!,
+          POSTGRES_PRISMA_URL: process.env.POSTGRES_PRISMA_URL!,
+          POSTGRES_URL_NON_POOLING: process.env.POSTGRES_URL_NON_POOLING!,
+          POSTGRES_USER: process.env.POSTGRES_USER!,
+          POSTGRES_HOST: process.env.POSTGRES_HOST!,
+          POSTGRES_PASSWORD: process.env.POSTGRES_PASSWORD!,
+          POSTGRES_DATABASE: process.env.POSTGRES_DATABASE!
+        }
+			},
+		},
+		routes: {
+			"POST /": "packages/functions/src/promote-it.handler",
+		},
+	});
+	new Cron(stack, "promoteIt", {
+		schedule: "rate(30 minutes)",
+		job: "packages/functions/src/promote-it.handler",
+	});
 
-  const promotionTable = new Table(stack, "abrysPromotions", {
-    fields: {
-      userWhoPosted: "string",
-      messageId: "string",
-      attachmentUri: "string",
-      instagramUrl: "string",
-      datePosted: "string",
-    },
-    primaryIndex: { partitionKey: "userWhoPosted", sortKey: "messageId" },
-  });
-
-  const api = new Api(stack, "api", {
-    defaults: {
-      function: {
-        bind: [promotionTable],
-      },
-    },
-    routes: {
-      "GET /": "packages/functions/src/lambda.handler",
-      // "GET /todo": "packages/functions/src/todo.list",
-      // "POST /todo": "packages/functions/src/todo.create",
-      // "GET /channel-state": "packages/functions/src/channel-state.handler",
-      // "GET /firebase-migration": "packages/functions/src/firebase-migration.handler",
-    },
-  });
-
-  // bus.subscribe("todo.created", {
-  //   handler: "packages/functions/src/events/todo-created.handler",
-  // });
-  new Cron(stack, "promoteIt", {
-    schedule: "rate(1 minute)",
-    job: "packages/functions/src/promote-it.handler",
-  });
-
-  stack.addOutputs({
-    ApiEndpoint: api.url,
-  });
+	stack.addOutputs({
+		ApiEndpoint: api.url,
+	});
 }
