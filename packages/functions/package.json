@@ -1,0 +1,19 @@
+{
+  "name": "@promote-it-on-abrys-fam-bot/functions",
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "sst bind vitest",
+    "typecheck": "tsc -noEmit"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.119",
+    "@types/node": "^20.3.3",
+    "@types/pg": "^8.10.2",
+    "sst": "2.22.2",
+    "vitest": "^0.32.4"
+  },
+  "dependencies": {
+    "pg": "^8.11.1"
+  }
+}

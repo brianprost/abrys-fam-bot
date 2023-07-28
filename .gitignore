@@ -185,3 +185,8 @@ pg_data/
 firebase/
 
 commands.json
+
+.build
+
+# opennext
+.open-next
