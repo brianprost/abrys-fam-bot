@@ -1,7 +1,6 @@
 import pg from "pg";
 import { config } from "dotenv";
-import commands from "./commands.json" assert { type: "json" };
-import { boolean, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text } from "drizzle-orm/pg-core";
 import { InferModel } from "drizzle-orm";
 
 const isDevMode = process.argv.includes("--dev");
@@ -39,24 +38,3 @@ await pool
 	.then((res: any) => {
 		console.log(res);
 	});
-
-// commands.forEach(async (c) => {
-// 	console.log(c);
-// 	await pool.query(c).then((res) => {
-// 		console.log(res);
-// 	});
-// });
-
-// await pool.query(
-// 	'CREATE TABLE IF NOT EXISTS "public"."config" ("id" SERIAL PRIMARY KEY, "key" TEXT, "value" TEXT);'
-// );
-
-// export const configTable = pgTable("config", {
-// 	id: serial("id").primaryKey(),
-// 	key: text("key"),
-// 	value: text("value"),
-// });
-
-// await pool.query(
-// 	'INSERT INTO "public"."config" ("key", "value") VALUES (\'most_recent_message_id\', \'1114617284401565716\'::text);'
-// );

@@ -127,9 +127,6 @@ importers:
 
   packages/functions:
     dependencies:
-      '@vercel/edge-config':
-        specifier: ^0.2.1
-        version: 0.2.1
       pg:
         specifier: ^8.11.1
         version: 8.11.1
@@ -4137,17 +4134,6 @@ packages:
       '@typescript-eslint/types': 5.61.0
       eslint-visitor-keys: 3.4.1
     dev: true
-
-  /@vercel/edge-config-fs@0.1.0:
-    resolution: {integrity: sha512-NRIBwfcS0bUoUbRWlNGetqjvLSwgYH/BqKqDN7vK1g32p7dN96k0712COgaz6VFizAm9b0g6IG6hR6+hc0KCPg==}
-    dev: false
-
-  /@vercel/edge-config@0.2.1:
-    resolution: {integrity: sha512-847kYqJEbga4PGgNrctQ9XsD+2Kw/S+UjzZnIFpebQ9VbdtB0MX4anq33WetcYZYPfhZd2L0uXVnY/BcjI5dOw==}
-    engines: {node: '>=14.6'}
-    dependencies:
-      '@vercel/edge-config-fs': 0.1.0
-    dev: false
 
   /@vitest/expect@0.32.4:
     resolution: {integrity: sha512-m7EPUqmGIwIeoU763N+ivkFjTzbaBn0n9evsTOcde03ugy2avPs3kZbYmw3DkcH1j5mxhMhdamJkLQ6dM1bk/A==}
