@@ -41,7 +41,7 @@ const promotions = pgTable("promotions", {
 
 const db = drizzle(pool);
 
-export async function handler(event: APIGatewayProxyEventV2) {
+export async function handler() {
 	const client = new Client({
 		intents: [GatewayIntentBits.Guilds, GatewayIntentBits.MessageContent],
 	});
@@ -49,19 +49,19 @@ export async function handler(event: APIGatewayProxyEventV2) {
 		await new Promise<void>((resolve, reject) => {
 			client.login(process.env.DISCORD_TOKEN);
 			client.once("ready", async () => {
-				console.log(`🤖 I'm logged in to Discord`);
 				try {
+					const channel: TextChannel = client.channels.cache.get(
+						process.env.DISCORD_CHANNEL_ID!
+					) as TextChannel;
+					await channel.send(`🤖 I'm awake!`);
 					await getNewSubmissions(client);
 					const approvedSubmissions = await getApprovedSubmissions(client);
 					if (approvedSubmissions.length < 1) {
 						console.log("No submissions to promote.");
-
+						await channel.send(`🤖 Please start promoting it on @abrys_fam.`);
+						resolve();
 						return;
 					}
-
-					const channel: TextChannel = client.channels.cache.get(
-						process.env.DISCORD_CHANNEL_ID!
-					) as TextChannel;
 
 					const igClient = new IgApiClient();
 					igClient.state.generateDevice(process.env.IG_USERNAME!);
@@ -99,12 +99,14 @@ export async function handler(event: APIGatewayProxyEventV2) {
 								`Promoted to https://www.instagram.com/p/${igPostCode}/`
 							);
 							console.log(`Replied to ${messageId}`);
+							resolve();
 						} else {
 							const message = await channel.messages.fetch(messageId);
 							await message.reply(
 								`Failed to promote to Instagram because: ${response}`
 							);
 							console.log(`Failed to promote ${messageId}`);
+							reject();
 						}
 					});
 					await Promise.all(promises);
@@ -113,6 +115,7 @@ export async function handler(event: APIGatewayProxyEventV2) {
 				} catch (err) {
 					client.destroy();
 					console.log(err);
+					reject();
 				}
 			});
 		});
