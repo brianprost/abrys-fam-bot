@@ -28,4 +28,13 @@ jobs:
         run: pnpm install
 
       - name: Deploy to AWS
+        env: 
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          DISCORD_CHANNEL_NAME: ${{ secrets.DISCORD_CHANNEL_NAME }}
+          DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
+          DISCORD_GUILD_ID: ${{ secrets.DISCORD_GUILD_ID }}
+          DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
+          IG_USERNAME: ${{ secrets.IG_USERNAME }}
+          IG_PASSWORD: ${{ secrets.IG_PASSWORD }}
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
         run: pnpm sst deploy --stage prod
