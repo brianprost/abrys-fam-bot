@@ -1,6 +1,6 @@
 {
   "name": "promote-it-on-abrys",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "To install dependencies:",
   "main": "index.ts",
   "type": "module",
