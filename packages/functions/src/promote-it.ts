@@ -78,7 +78,7 @@ export async function handler() {
 							caption,
 							imageBuffer,
 							igClient,
-							false
+							isDevMode
 						);
 						console.log("from Instagram: ", response);
 
@@ -252,10 +252,15 @@ async function getApprovedSubmissions(client: Client) {
 			if (!reactions) {
 				continue;
 			}
-			const reactionUsers = await reactions.first()?.users.fetch();
+			// get all users from all reactions (like all emojis) to the message
+			const reactionUsers: string[] = await reactions.reduce(async (acc, reaction) => {
+				const users = await acc;
+				const usersWhoReacted = await reaction.users.fetch();
+				return users.concat(usersWhoReacted.map((user) => user.username));
+			}, Promise.resolve([] as string[]));
 			const hasApprovedReactors = approvedReactors.some((approvedReactor) => {
 				return reactionUsers?.some((user) => {
-					return user.username === approvedReactor;
+					return user === approvedReactor;
 				});
 			});
 
@@ -264,7 +269,7 @@ async function getApprovedSubmissions(client: Client) {
 					"going to promote",
 					s.messageId,
 					"on abrys fam. because this is the list of approved reactors: ",
-					reactionUsers?.map((user) => user.username)
+					reactionUsers?.map((user) => user)
 				);
 				submissions.push({
 					messageId: s.messageId,
@@ -272,7 +277,7 @@ async function getApprovedSubmissions(client: Client) {
 					imageUrl: s.imageUrl!,
 				});
 			} else {
-				console.log("no approved users reacted to ", s.messageId);
+				console.log("no approved users reacted to ", s.messageId);;
 			}
 		}
 	}
