@@ -22,10 +22,10 @@ const pool = new Pool({
 
 // type Promotion = InferModel<typeof promotions>;
 const promotions = pgTable("promotions", {
-  messageId: text("message_id").primaryKey(),
-  discordUser: text("discord_user"),
-  imageUrl: text("image_url"),
-  igPostCode: text("ig_post_code"),
+	messageId: text("message_id").primaryKey(),
+	discordUser: text("discord_user"),
+	imageUrl: text("image_url"),
+	igPostCode: text("ig_post_code"),
 });
 
 // drop old table

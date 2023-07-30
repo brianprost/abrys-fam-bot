@@ -185,6 +185,7 @@ pg_data/
 firebase/
 
 commands.json
+to_sql.json
 
 .build
 
