@@ -1,22 +1,21 @@
 {
-  "compilerOptions": {
-    "module": "esnext",
-    "esModuleInterop": true,
-    "target": "ES2022",
-    "moduleResolution": "Node",
-    "outDir": "dist",
-    "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": true,
-    "isolatedModules": false,
-    "strict": true,
-    "noImplicitAny": true,
-    "useUnknownInCatchVariables": false,
-    "inlineSourceMap": true,
-    "resolveJsonModule": true,
-  },
-  "ts-node": {
-    "esm": true
-  },
-  "exclude": ["promote-it-on-abrys-fam-bot/packages"],
-  
+	"compilerOptions": {
+		"module": "esnext",
+		"esModuleInterop": true,
+		"target": "ES2022",
+		"moduleResolution": "Node",
+		"outDir": "dist",
+		"forceConsistentCasingInFileNames": true,
+		"noFallthroughCasesInSwitch": true,
+		"isolatedModules": false,
+		"strict": true,
+		"noImplicitAny": true,
+		"useUnknownInCatchVariables": false,
+		"inlineSourceMap": true,
+		"resolveJsonModule": true
+	},
+	"ts-node": {
+		"esm": true
+	},
+	"exclude": ["promote-it-on-abrys-fam-bot/packages"]
 }
