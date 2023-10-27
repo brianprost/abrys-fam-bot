@@ -1,8 +1,9 @@
 import { Client, Collection, GatewayIntentBits, TextChannel } from "discord.js";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { pgTable, text } from "drizzle-orm/pg-core";
+import postgres from "postgres";
+import { drizzle } from "drizzle-orm/postgres-js";
 import { InferModel, isNull, eq } from "drizzle-orm";
-import pg from "pg";
 import sharp from "sharp";
 import { IgApiClient } from "instagram-private-api";
 import { config } from "dotenv";
@@ -20,15 +21,12 @@ console.log(`Running in ${isDevMode ? "dev" : "prod"} mode.`);
 
 // POSTGRES //
 
-const { Pool } = pg;
-
 const dbConnectionString = isDevMode
 	? process.env.PG_DATABASE_CONNECTION_STRING
 	: process.env.POSTGRES_URL + "?sslmode=require";
 
-const pool = new Pool({
-	connectionString: dbConnectionString,
-});
+const dbClient = postgres(dbConnectionString);
+const db = drizzle(dbClient);
 
 type Promotion = InferModel<typeof promotions>;
 const promotions = pgTable("promotions", {
@@ -37,8 +35,6 @@ const promotions = pgTable("promotions", {
 	imageUrl: text("image_url"),
 	igPostCode: text("ig_post_code"),
 });
-
-const db = drizzle(pool);
 
 export async function handler() {
 	const client = new Client({
@@ -253,11 +249,14 @@ async function getApprovedSubmissions(client: Client) {
 				continue;
 			}
 			// get all users from all reactions (like all emojis) to the message
-			const reactionUsers: string[] = await reactions.reduce(async (acc, reaction) => {
-				const users = await acc;
-				const usersWhoReacted = await reaction.users.fetch();
-				return users.concat(usersWhoReacted.map((user) => user.username));
-			}, Promise.resolve([] as string[]));
+			const reactionUsers: string[] = await reactions.reduce(
+				async (acc, reaction) => {
+					const users = await acc;
+					const usersWhoReacted = await reaction.users.fetch();
+					return users.concat(usersWhoReacted.map((user) => user.username));
+				},
+				Promise.resolve([] as string[])
+			);
 			const hasApprovedReactors = approvedReactors.some((approvedReactor) => {
 				return reactionUsers?.some((user) => {
 					return user === approvedReactor;
@@ -277,7 +276,7 @@ async function getApprovedSubmissions(client: Client) {
 					imageUrl: s.imageUrl!,
 				});
 			} else {
-				console.log("no approved users reacted to ", s.messageId);;
+				console.log("no approved users reacted to ", s.messageId);
 			}
 		}
 	}
