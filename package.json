@@ -1,6 +1,6 @@
 {
   "name": "promote-it-on-abrys",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "A serverless Discord bot that promotes fan submissions on the Frost Children's Discord to the Instagram account @abrys_fam.",
   "main": "index.ts",
   "type": "module",
